@@ -5,6 +5,7 @@ export type PapelUsuario = 'admin' | 'professor' | 'dancarino'
 export type GeneroDanca = 'peao' | 'prenda'
 export type TipoDanca = 'fila' | 'roda' | 'pares_independentes'
 export type TipoCoreografia = 'danca_tradicional' | 'entrada' | 'saida'
+export type FuncaoEscalacao = 'titular' | 'reserva'
 
 export interface Perfil {
   id: string
@@ -12,6 +13,23 @@ export interface Perfil {
   email: string | null
   papel: PapelUsuario
   integrante_id: string | null
+}
+
+export interface Integrante {
+  id: string
+  nome: string
+  apelido: string | null
+  genero: GeneroDanca
+  ativo: boolean
+  observacoes: string | null
+}
+
+export interface Par {
+  id: string
+  numero: number | null
+  peao_id: string
+  prenda_id: string
+  cor: string
 }
 
 export interface Danca {
@@ -23,4 +41,33 @@ export interface Danca {
   tipo: TipoDanca | null
   tempo_ampliado: boolean
   observacoes: string | null
+}
+
+export interface Coreografia {
+  id: string
+  tipo: TipoCoreografia
+  danca_id: number | null
+  nome: string | null
+  ano: number
+  tablado_id: string | null
+  observacoes: string | null
+}
+
+export interface ItemEscalacao {
+  coreografia_id: string
+  integrante_id: string
+  funcao: FuncaoEscalacao
+}
+
+// Textos para exibir na interface
+export const NOME_GENERO: Record<GeneroDanca, string> = { peao: 'Peão', prenda: 'Prenda' }
+export const NOME_PAPEL: Record<PapelUsuario, string> = {
+  admin: 'Administrador',
+  professor: 'Professor',
+  dancarino: 'Dançarino',
+}
+export const NOME_TIPO_DANCA: Record<TipoDanca, string> = {
+  fila: 'Fila',
+  roda: 'Roda',
+  pares_independentes: 'Pares independentes',
 }

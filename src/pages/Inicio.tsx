@@ -1,74 +1,166 @@
-import { useQuery } from '@tanstack/react-query'
-import { Aviso, Carregando } from '../components/ui'
-import { blocoForaDoSorteio, tempoDeApresentacaoMin } from '../domain/enart'
-import { useAuth } from '../lib/auth'
-import { supabase } from '../lib/supabase'
-import type { Danca } from '../types/db'
-
-const ANO_ATUAL = new Date().getFullYear()
+import { useMemo } from 'react'
+import { Link } from 'react-router-dom'
+import { Aviso, Etiqueta, Icone, type NomeIcone } from '../components/ui'
+import { blocoForaDoSorteio, dancasDoAno } from '../domain/enart'
+import { mapearPares } from '../domain/indices'
+import { podeEditar, useAuth } from '../lib/auth'
+import { ANO_ATUAL } from '../lib/ano'
+import { useDancas, useEscalacoesDoAno, useIntegrantes, usePares } from '../lib/dados'
 
 export function Inicio() {
   const { perfil } = useAuth()
-  const fora = blocoForaDoSorteio(ANO_ATUAL)
+  const editor = podeEditar(perfil)
+  const dancas = useDancas()
+  const integrantes = useIntegrantes()
+  const pares = usePares()
+  const escalacoes = useEscalacoesDoAno(ANO_ATUAL)
 
-  const { data: dancas, isLoading, error } = useQuery({
-    queryKey: ['dancas'],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('dancas').select('*').order('id')
-      if (error) throw error
-      return data as Danca[]
-    },
-  })
+  const fora = blocoForaDoSorteio(ANO_ATUAL)
+  const dancasAno = dancasDoAno(dancas.data ?? [], ANO_ATUAL)
+  const dancasPorId = useMemo(() => new Map((dancas.data ?? []).map((d) => [d.id, d])), [dancas.data])
+  const ativos = (integrantes.data ?? []).filter((i) => i.ativo)
+
+  const meuPar = perfil?.integrante_id ? mapearPares(pares.data ?? []).get(perfil.integrante_id) : undefined
+  const nomeParceiro = meuPar && integrantes.data?.find((i) => i.id === meuPar.parceiroId)?.nome
+
+  const minhasDancas = useMemo(
+    () =>
+      (escalacoes.data ?? [])
+        .filter((e) => e.integrante_id === perfil?.integrante_id && e.coreografias.danca_id !== null)
+        .map((e) => ({ danca: dancasPorId.get(e.coreografias.danca_id!), funcao: e.funcao }))
+        .filter((x) => x.danca)
+        .sort((a, b) => a.danca!.id - b.danca!.id),
+    [escalacoes.data, perfil?.integrante_id, dancasPorId],
+  )
+
+  const dancasEscaladas = new Set((escalacoes.data ?? []).map((e) => e.coreografias.danca_id)).size
 
   return (
     <div className="flex flex-col gap-6">
       <section>
         <h1 className="text-2xl font-semibold">Olá{perfil ? `, ${perfil.nome.split(' ')[0]}` : ''}!</h1>
         <p className="mt-1 text-texto-suave">
-          ENART {ANO_ATUAL}: 21 danças em sorteio. O Bloco {fora} fica fora neste ano.
+          ENART {ANO_ATUAL} · 21 danças em sorteio · Bloco {fora} fora neste ano.
         </p>
       </section>
 
-      {isLoading && <Carregando texto="Carregando danças…" />}
-      {error && <Aviso tipo="erro">Não foi possível carregar as danças.</Aviso>}
-
-      {dancas && (
-        <div className="grid gap-4 sm:grid-cols-2">
-          {([1, 2, 3, 4] as const).map((bloco) => {
-            const doBloco = dancas.filter((d) => d.bloco === bloco)
-            const estaFora = bloco === fora
-            return (
-              <section
-                key={bloco}
-                className={`rounded-2xl border border-borda bg-superficie p-4 ${estaFora ? 'opacity-60' : ''}`}
-              >
-                <header className="mb-3 flex items-baseline justify-between">
-                  <h2 className="font-semibold">Bloco {bloco}</h2>
-                  {estaFora && (
-                    <span className="rounded-full bg-superficie-2 px-2 py-0.5 text-xs text-texto-suave">
-                      fora do sorteio em {ANO_ATUAL}
-                    </span>
-                  )}
-                </header>
-                <ul className="flex flex-col divide-y divide-borda">
-                  {doBloco.map((d) => (
-                    <li key={d.id} className="flex items-center justify-between py-2 text-sm">
-                      <span>{d.nome}</span>
-                      <span className="text-xs text-texto-suave">
-                        urna {d.urna} · {tempoDeApresentacaoMin(d)} min
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )
-          })}
-        </div>
+      {perfil && !perfil.integrante_id && perfil.papel === 'dancarino' && (
+        <Aviso tipo="info">Sua conta ainda não foi vinculada ao seu nome no grupo. Peça a um professor.</Aviso>
       )}
 
-      <p className="text-sm text-texto-suave">
-        Em breve: tablado 3D, integrantes, escalação e formações de cada dança.
-      </p>
+      {perfil?.integrante_id && (
+        <section className="rounded-2xl border border-borda bg-superficie p-4">
+          <h2 className="font-semibold">Suas danças em {ANO_ATUAL}</h2>
+          {meuPar && (
+            <p className="mt-1 flex items-center gap-2 text-sm text-texto-suave">
+              <span className="inline-block size-3 rounded-full" style={{ background: meuPar.par.cor }} />
+              Par {meuPar.par.numero ?? '–'} com {nomeParceiro}
+            </p>
+          )}
+          {minhasDancas.length === 0 ? (
+            <p className="mt-3 text-sm text-texto-suave">Você ainda não foi escalado em nenhuma dança.</p>
+          ) : (
+            <ul className="mt-3 flex flex-wrap gap-2">
+              {minhasDancas.map(({ danca, funcao }) => (
+                <li key={danca!.id}>
+                  <Link
+                    to={`/dancas/${danca!.slug}`}
+                    className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-borda px-3 text-sm hover:bg-superficie-2"
+                  >
+                    {danca!.nome}
+                    {funcao === 'reserva' && <Etiqueta cor="destaque">reserva</Etiqueta>}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
+
+      <section className="grid gap-3 sm:grid-cols-3">
+        <Atalho
+          para="/dancas"
+          icone="dancas"
+          titulo="Danças"
+          valor={`${dancasEscaladas} de ${dancasAno.length || 21}`}
+          detalhe="com escalação definida"
+        />
+        <Atalho
+          para="/integrantes"
+          icone="integrantes"
+          titulo="Integrantes"
+          valor={String(ativos.length)}
+          detalhe="ativos no grupo"
+        />
+        <Atalho
+          para="/pares"
+          icone="pares"
+          titulo="Pares"
+          valor={String(pares.data?.length ?? 0)}
+          detalhe="formados"
+        />
+      </section>
+
+      {editor && (ativos.length === 0 || (pares.data?.length ?? 0) === 0) && (
+        <section className="rounded-2xl border border-dashed border-borda p-4 text-sm">
+          <p className="font-medium">Primeiros passos</p>
+          <ol className="mt-2 list-decimal pl-5 text-texto-suave">
+            <li>
+              Cadastre os{' '}
+              <Link to="/integrantes" className="text-link underline">
+                integrantes
+              </Link>
+              .
+            </li>
+            <li>
+              Forme os{' '}
+              <Link to="/pares" className="text-link underline">
+                pares
+              </Link>{' '}
+              e escolha a cor de cada um.
+            </li>
+            <li>
+              Em cada{' '}
+              <Link to="/dancas" className="text-link underline">
+                dança
+              </Link>
+              , defina quem é titular e quem é reserva.
+            </li>
+          </ol>
+        </section>
+      )}
+
+      <p className="text-sm text-texto-suave">Em breve: tablado 3D e formações de cada dança.</p>
     </div>
+  )
+}
+
+function Atalho({
+  para,
+  icone,
+  titulo,
+  valor,
+  detalhe,
+}: {
+  para: string
+  icone: NomeIcone
+  titulo: string
+  valor: string
+  detalhe: string
+}) {
+  return (
+    <Link
+      to={para}
+      className="flex items-center gap-4 rounded-2xl border border-borda bg-superficie p-4 transition hover:bg-superficie-2"
+    >
+      <span className="flex size-11 items-center justify-center rounded-xl bg-marca/15 text-link">
+        <Icone nome={icone} className="size-6" />
+      </span>
+      <div>
+        <p className="text-sm text-texto-suave">{titulo}</p>
+        <p className="text-xl font-semibold leading-tight">{valor}</p>
+        <p className="text-xs text-texto-suave">{detalhe}</p>
+      </div>
+    </Link>
   )
 }

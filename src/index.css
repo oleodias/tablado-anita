@@ -1,37 +1,41 @@
 @import 'tailwindcss';
 
 /*
- * Tokens de cor (provisórios — serão trocados pelas cores oficiais do grupo).
+ * Tokens de cor — identidade do Grupo de Artes Nativas Anita Garibaldi:
+ * azul-marinho (marca), azul-céu (links no escuro), dourado (destaque) e o
+ * verde das folhas de louro do logo.
  * Para mudar a identidade visual, edite apenas as variáveis abaixo.
  */
 :root {
-  --fundo: #f6f2ea;
+  --fundo: #f3f5f9;
   --superficie: #ffffff;
-  --superficie-2: #efe9dd;
-  --borda: #ddd3c2;
-  --texto: #1d1a16;
-  --texto-suave: #6b6256;
-  --marca: #1f3b2d;
+  --superficie-2: #e9edf4;
+  --borda: #d3dae6;
+  --texto: #131a26;
+  --texto-suave: #5a6475;
+  --marca: #14336b;
   --marca-texto: #ffffff;
-  --link: #1f5a3f;
-  --destaque: #b9801f;
+  --link: #1d4f9e;
+  --destaque: #b8892b;
+  --verde: #1f6b3a;
   --perigo: #b3261e;
-  --sucesso: #2e7d4f;
+  --sucesso: #1f7a45;
   color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --fundo: #12100d;
-    --superficie: #1c1915;
-    --superficie-2: #26221c;
-    --borda: #3a342b;
-    --texto: #f1ebe0;
-    --texto-suave: #a99f90;
-    --marca: #3f7a5c;
+    --fundo: #0b111c;
+    --superficie: #131b2a;
+    --superficie-2: #1b2537;
+    --borda: #2b3850;
+    --texto: #e9eef7;
+    --texto-suave: #9aa6ba;
+    --marca: #3b6fd1;
     --marca-texto: #ffffff;
-    --link: #8fd1ab;
-    --destaque: #e8b04a;
+    --link: #9cc0ff;
+    --destaque: #e2bd5c;
+    --verde: #6fcf8f;
     --perigo: #f2b8b5;
     --sucesso: #7fcf9f;
     color-scheme: dark;
@@ -49,6 +53,7 @@
   --color-marca-texto: var(--marca-texto);
   --color-link: var(--link);
   --color-destaque: var(--destaque);
+  --color-verde: var(--verde);
   --color-perigo: var(--perigo);
   --color-sucesso: var(--sucesso);
   --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;

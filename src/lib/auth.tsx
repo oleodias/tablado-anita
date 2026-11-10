@@ -10,6 +10,8 @@ interface EstadoAuth {
   /** true quando a pessoa chegou por convite/recuperação e ainda precisa criar a senha */
   precisaDefinirSenha: boolean
   senhaDefinida: () => void
+  /** Recarrega o próprio perfil (ex.: depois de o admin alterar o vínculo). */
+  recarregarPerfil: () => Promise<void>
   sair: () => Promise<void>
 }
 
@@ -64,6 +66,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     perfil,
     precisaDefinirSenha,
     senhaDefinida: () => setPrecisaDefinirSenha(false),
+    recarregarPerfil: async () => {
+      if (sessao) setPerfil(await buscarPerfil(sessao.user.id))
+    },
     sair: async () => {
       await supabase.auth.signOut()
     },

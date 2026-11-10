@@ -2,9 +2,14 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { Layout } from './components/Layout'
 import { Aviso, Carregando } from './components/ui'
 import { useAuth } from './lib/auth'
+import { Acessos } from './pages/Acessos'
+import { Danca } from './pages/Danca'
+import { Dancas } from './pages/Dancas'
 import { DefinirSenha } from './pages/DefinirSenha'
 import { Entrar } from './pages/Entrar'
 import { Inicio } from './pages/Inicio'
+import { Integrantes } from './pages/Integrantes'
+import { Pares } from './pages/Pares'
 
 export function App() {
   const { carregando, sessao, perfil, precisaDefinirSenha, sair } = useAuth()
@@ -40,6 +45,11 @@ export function App() {
     <Routes>
       <Route element={<Layout />}>
         <Route index element={<Inicio />} />
+        <Route path="dancas" element={<Dancas />} />
+        <Route path="dancas/:slug" element={<Danca />} />
+        <Route path="integrantes" element={<Integrantes />} />
+        <Route path="pares" element={<Pares />} />
+        {perfil.papel === 'admin' && <Route path="acessos" element={<Acessos />} />}
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

@@ -31,9 +31,20 @@ src/
 supabase/
   migrations/         alterações do banco, em ordem (aplicar no SQL Editor)
   scripts/            comandos úteis (ex.: promover alguém a admin)
-docs/                 guias de configuração
+docs/                 guias de configuração e levantamento do tablado
 .github/workflows/    publicação automática no GitHub Pages
 ```
+
+## Telas
+
+| Tela | Quem usa | O que faz |
+|---|---|---|
+| Início | todos | suas danças do ano, seu par, atalhos |
+| Danças | todos | as 28 danças por bloco, filtro por ano (rodízio do regulamento) |
+| Dança | todos (edição: professores) | tipo, observações e escalação (titular/reserva) com alerta de 8 a 12 pares |
+| Integrantes | todos (edição: professores) | cadastro de dançarinos, busca e filtros |
+| Pares | todos (edição: professores) | peão + prenda, número e cor do par |
+| Acessos | admin | papel de cada conta e vínculo com o integrante |
 
 ## Rodando no seu computador
 

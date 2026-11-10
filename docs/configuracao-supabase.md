@@ -13,7 +13,12 @@ Projeto: `tablado-anita-garibaldi` — região São Paulo.
    (com 28 linhas), `tablados`, etc.
 
 Futuras alterações do banco virão como novos arquivos em `supabase/migrations/`, sempre
-aplicados na ordem do nome.
+aplicados na ordem do nome, **cada um uma única vez**:
+
+| Arquivo | Fase | Aplicado? |
+|---|---|---|
+| `20261110000001_estrutura_inicial.sql` | 0 | sim |
+| `20261111000001_fase2_pares_escalacao.sql` | 2 | aplicar antes de publicar a fase 2 |
 
 ## 2. Configurar os endereços de login
 
