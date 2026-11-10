@@ -11,8 +11,8 @@ const BRANCO_TOALHA = '#f2f2f2'
 export function ChaoGinasio() {
   return (
     <mesh rotation-x={-Math.PI / 2} position-y={-0.001} receiveShadow>
-      <planeGeometry args={[80, 80]} />
-      <meshStandardMaterial color="#4a4f57" roughness={0.95} />
+      <planeGeometry args={[120, 100]} />
+      <meshStandardMaterial color="#6f747b" roughness={0.95} />
     </mesh>
   )
 }
@@ -66,6 +66,22 @@ function MesaComCadeiras({ largura, cadeiras }: { largura: number; cadeiras: num
   )
 }
 
+/** Seta pintada no piso. angulo 0 = apontando para a frente (jurados). */
+function Seta({ posicao, angulo, cor }: { posicao: [number, number, number]; angulo: number; cor: string }) {
+  return (
+    <group position={posicao} rotation-y={angulo}>
+      <mesh rotation-x={-Math.PI / 2} rotation-z={Math.PI / 2} position-z={0.25}>
+        <circleGeometry args={[0.35, 3]} />
+        <meshBasicMaterial color={cor} transparent opacity={0.75} depthWrite={false} />
+      </mesh>
+      <mesh rotation-x={-Math.PI / 2} position-z={-0.15}>
+        <planeGeometry args={[0.18, 0.5]} />
+        <meshBasicMaterial color={cor} transparent opacity={0.75} depthWrite={false} />
+      </mesh>
+    </group>
+  )
+}
+
 export function Rotulo({
   children,
   posicao,
@@ -93,7 +109,8 @@ export function Rotulo({
  * - mesa principal dos jurados na FRENTE (z positivo), centralizada;
  * - 2 mesas de avaliadores em cada lateral;
  * - conjunto musical no FUNDO, canto ESQUERDO (visto da mesa dos jurados);
- * - corredor de acesso no centro do fundo (a confirmar).
+ * - ENTRADA pelo corredor no centro do fundo;
+ * - SAÍDA pela lateral direita dos jurados, entre as duas mesas de avaliadores.
  */
 export function Entorno({ largura, profundidade, rotulos }: { largura: number; profundidade: number; rotulos: boolean }) {
   const meiaL = largura / 2
@@ -147,7 +164,13 @@ export function Entorno({ largura, profundidade, rotulos }: { largura: number; p
           <meshStandardMaterial color="#1b1b1b" roughness={0.6} />
         </mesh>
       ))}
-      {rotulos && <Rotulo posicao={[0, 1.3, -meiaP - 2.5]}>Acesso (a confirmar)</Rotulo>}
+      {/* Entrada: corredor no centro do fundo */}
+      <Seta posicao={[0, ALTURA_TABLADO + 0.01, -meiaP + 0.5]} angulo={0} cor="#3cb44b" />
+      {rotulos && <Rotulo posicao={[0, 1.3, -meiaP - 2.5]}>Entrada</Rotulo>}
+
+      {/* Saída: lateral direita dos jurados, entre as duas mesas de avaliadores */}
+      <Seta posicao={[meiaL - 0.5, ALTURA_TABLADO + 0.01, 0]} angulo={Math.PI / 2} cor="#e6194b" />
+      {rotulos && <Rotulo posicao={[meiaL + afastamento, 1.3, 0]}>Saída</Rotulo>}
     </group>
   )
 }

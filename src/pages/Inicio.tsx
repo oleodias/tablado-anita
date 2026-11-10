@@ -2,10 +2,11 @@ import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { Aviso, Etiqueta, Icone, type NomeIcone } from '../components/ui'
 import { blocoForaDoSorteio, dancasDoAno } from '../domain/enart'
-import { mapearPares } from '../domain/indices'
+import { MinhaIndumentaria } from '../components/MinhaIndumentaria'
+import { nomeCurto } from '../domain/indices'
 import { podeEditar, useAuth } from '../lib/auth'
 import { ANO_ATUAL } from '../lib/ano'
-import { useDancas, useEscalacoesDoAno, useIntegrantes, usePares } from '../lib/dados'
+import { useDancas, useDuplasDoAno, useEscalacoesDoAno, useIntegrantes, usePares } from '../lib/dados'
 
 export function Inicio() {
   const { perfil } = useAuth()
@@ -20,8 +21,20 @@ export function Inicio() {
   const dancasPorId = useMemo(() => new Map((dancas.data ?? []).map((d) => [d.id, d])), [dancas.data])
   const ativos = (integrantes.data ?? []).filter((i) => i.ativo)
 
-  const meuPar = perfil?.integrante_id ? mapearPares(pares.data ?? []).get(perfil.integrante_id) : undefined
-  const nomeParceiro = meuPar && integrantes.data?.find((i) => i.id === meuPar.parceiroId)?.nome
+  const duplas = useDuplasDoAno(ANO_ATUAL)
+  const eu = integrantes.data?.find((i) => i.id === perfil?.integrante_id)
+
+  // Em cada dança a dupla pode ser diferente: dança → nome de quem dança comigo.
+  const parceiroPorDanca = useMemo(() => {
+    const mapa = new Map<number, { nome: string; cor: string }>()
+    const meuId = perfil?.integrante_id
+    for (const d of duplas.data ?? []) {
+      if (d.coreografias.danca_id === null || (d.peao_id !== meuId && d.prenda_id !== meuId)) continue
+      const parceiro = integrantes.data?.find((i) => i.id === (d.peao_id === meuId ? d.prenda_id : d.peao_id))
+      if (parceiro) mapa.set(d.coreografias.danca_id, { nome: nomeCurto(parceiro), cor: d.cor })
+    }
+    return mapa
+  }, [duplas.data, integrantes.data, perfil?.integrante_id])
 
   const minhasDancas = useMemo(
     () =>
@@ -51,12 +64,6 @@ export function Inicio() {
       {perfil?.integrante_id && (
         <section className="rounded-2xl border border-borda bg-superficie p-4">
           <h2 className="font-semibold">Suas danças em {ANO_ATUAL}</h2>
-          {meuPar && (
-            <p className="mt-1 flex items-center gap-2 text-sm text-texto-suave">
-              <span className="inline-block size-3 rounded-full" style={{ background: meuPar.par.cor }} />
-              Par {meuPar.par.numero ?? '–'} com {nomeParceiro}
-            </p>
-          )}
           {minhasDancas.length === 0 ? (
             <p className="mt-3 text-sm text-texto-suave">Você ainda não foi escalado em nenhuma dança.</p>
           ) : (
@@ -67,7 +74,13 @@ export function Inicio() {
                     to={`/dancas/${danca!.slug}`}
                     className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-borda px-3 text-sm hover:bg-superficie-2"
                   >
+                    {parceiroPorDanca.has(danca!.id) && (
+                      <span className="inline-block size-3 rounded-full" style={{ background: parceiroPorDanca.get(danca!.id)!.cor }} />
+                    )}
                     {danca!.nome}
+                    {parceiroPorDanca.has(danca!.id) && (
+                      <span className="text-texto-suave">com {parceiroPorDanca.get(danca!.id)!.nome}</span>
+                    )}
                     {funcao === 'reserva' && <Etiqueta cor="destaque">reserva</Etiqueta>}
                   </Link>
                 </li>
@@ -76,6 +89,8 @@ export function Inicio() {
           )}
         </section>
       )}
+
+      {eu && <MinhaIndumentaria key={`${eu.indumentaria}${eu.indumentaria_danca}${eu.indumentaria_coreografia}`} integrante={eu} />}
 
       <section className="grid gap-3 sm:grid-cols-3">
         <Atalho
@@ -95,7 +110,7 @@ export function Inicio() {
         <Atalho
           para="/pares"
           icone="pares"
-          titulo="Pares"
+          titulo="Pares padrão"
           valor={String(pares.data?.length ?? 0)}
           detalhe="formados"
         />

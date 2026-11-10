@@ -1,31 +1,13 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { Aviso, Avatar, Botao, Carregando, Etiqueta, Icone, NumeroPar, Segmentado, Vazio } from '../components/ui'
+import { Aviso, Botao, Carregando, Etiqueta, Icone, Segmentado, Vazio } from '../components/ui'
 import { blocoForaDoSorteio, tempoDeApresentacaoMin } from '../domain/enart'
-import { mapearPares } from '../domain/indices'
-import { resumirEscalacao } from '../domain/pares'
 import { podeEditar, useAuth } from '../lib/auth'
 import { ANO_ATUAL, useAno } from '../lib/ano'
-import {
-  useAlterarEscalacao,
-  useAtualizarDanca,
-  useCoreografia,
-  useDancas,
-  useEscalacao,
-  useIntegrantes,
-  usePares,
-} from '../lib/dados'
+import { useAtualizarDanca, useDancas } from '../lib/dados'
 import { mensagemDeErro } from '../lib/erros'
-import { NOME_TIPO_DANCA, type Danca as TDanca, type FuncaoEscalacao, type Integrante, type Par, type TipoDanca } from '../types/db'
-
-/** "fora" = não escalado. */
-type Situacao = FuncaoEscalacao | 'fora'
-
-const OPCOES_SITUACAO: { valor: Situacao; texto: string }[] = [
-  { valor: 'fora', texto: 'Fora' },
-  { valor: 'titular', texto: 'Titular' },
-  { valor: 'reserva', texto: 'Reserva' },
-]
+import { NOME_TIPO_DANCA, type Danca as TDanca, type TipoDanca } from '../types/db'
+import { EscalacaoDanca } from './EscalacaoDanca'
 
 export function Danca() {
   const { slug } = useParams()
@@ -67,8 +49,21 @@ function DetalheDanca({ danca, ano }: { danca: TDanca; ano: number }) {
         </div>
       </header>
 
+      <Link
+        to={`/dancas/${danca.slug}/formacoes${ano === ANO_ATUAL ? '' : `?ano=${ano}`}`}
+        className="flex items-center gap-4 rounded-2xl border border-marca/40 bg-marca/10 p-4 transition hover:bg-marca/15"
+      >
+        <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-marca text-marca-texto">
+          <Icone nome="tablado" className="size-6" />
+        </span>
+        <div className="min-w-0">
+          <p className="font-semibold">Formações no tablado</p>
+          <p className="text-sm text-texto-suave">Veja e organize onde cada dupla fica em cada momento da dança.</p>
+        </div>
+      </Link>
+
+      <EscalacaoDanca danca={danca} ano={ano} />
       <InformacoesDanca danca={danca} />
-      <Escalacao danca={danca} ano={ano} />
     </div>
   )
 }
@@ -137,261 +132,5 @@ function InformacoesDanca({ danca }: { danca: TDanca }) {
         </dl>
       )}
     </section>
-  )
-}
-
-// -----------------------------------------------------------------------------
-// Escalação: quem dança como titular ou reserva
-// -----------------------------------------------------------------------------
-function Escalacao({ danca, ano }: { danca: TDanca; ano: number }) {
-  const { perfil } = useAuth()
-  const editor = podeEditar(perfil)
-  const integrantes = useIntegrantes()
-  const pares = usePares()
-  const coreografia = useCoreografia(danca.id, ano)
-  const escalacao = useEscalacao(coreografia.data?.id)
-  const alterar = useAlterarEscalacao(danca.id, ano)
-
-  const situacao = useMemo(() => {
-    const mapa = new Map<string, Situacao>()
-    for (const e of escalacao.data ?? []) mapa.set(e.integrante_id, e.funcao)
-    return mapa
-  }, [escalacao.data])
-  const sit = (id: string): Situacao => situacao.get(id) ?? 'fora'
-
-  const todos = integrantes.data ?? []
-  const comPar = mapearPares(pares.data ?? [])
-  // Inativos só aparecem se já estiverem escalados.
-  const visivel = (i: Integrante) => i.ativo || situacao.has(i.id)
-  const porId = new Map(todos.map((i) => [i.id, i]))
-  const listaPares = (pares.data ?? []).filter((p) => {
-    const a = porId.get(p.peao_id)
-    const b = porId.get(p.prenda_id)
-    return a && b && (visivel(a) || visivel(b))
-  })
-  const avulsos = todos.filter((i) => !comPar.has(i.id) && visivel(i))
-
-  const resumo = resumirEscalacao(
-    (escalacao.data ?? []).flatMap((e) => {
-      const i = porId.get(e.integrante_id)
-      return i ? [{ genero: i.genero, funcao: e.funcao }] : []
-    }),
-  )
-
-  const definir = (ids: string[], nova: Situacao) =>
-    alterar.mutate(ids.map((integranteId) => ({ integranteId, funcao: nova === 'fora' ? null : nova })))
-
-  const carregando = integrantes.isLoading || pares.isLoading || coreografia.isLoading || escalacao.isLoading
-
-  return (
-    <section className="rounded-2xl border border-borda bg-superficie">
-      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-borda p-4">
-        <div>
-          <h2 className="font-semibold">Escalação {ano}</h2>
-          <p className="text-sm text-texto-suave">
-            {resumo.pares} pares titulares · {resumo.reservas} reservas
-          </p>
-        </div>
-        {editor && listaPares.length > 0 && (
-          <div className="flex gap-2">
-            <Botao
-              variante="secundario"
-              className="text-sm"
-              disabled={alterar.isPending}
-              onClick={() =>
-                definir(
-                  listaPares.flatMap((p) => [p.peao_id, p.prenda_id]).filter((id) => porId.get(id)?.ativo),
-                  'titular',
-                )
-              }
-            >
-              Todos titulares
-            </Botao>
-            <Botao
-              variante="secundario"
-              className="text-sm"
-              disabled={alterar.isPending || situacao.size === 0}
-              onClick={() => definir([...situacao.keys()], 'fora')}
-            >
-              Limpar
-            </Botao>
-          </div>
-        )}
-      </header>
-
-      <div className="flex flex-col gap-4 p-4">
-        {carregando && <Carregando />}
-
-        {!carregando && situacao.size > 0 && resumo.problemas.length > 0 && (
-          <Aviso tipo="info">
-            <p className="flex items-center gap-2 font-medium text-texto">
-              <Icone nome="alerta" className="size-4 text-destaque" /> Atenção ao regulamento (Força A)
-            </p>
-            <ul className="mt-1 list-disc pl-5">
-              {resumo.problemas.map((p) => (
-                <li key={p}>{p}</li>
-              ))}
-            </ul>
-          </Aviso>
-        )}
-        {!carregando && situacao.size > 0 && resumo.problemas.length === 0 && (
-          <Aviso tipo="sucesso">Escalação dentro dos limites da Força A (8 a 12 pares).</Aviso>
-        )}
-        {alterar.error && <Aviso tipo="erro">{mensagemDeErro(alterar.error)}</Aviso>}
-
-        {!carregando && todos.length === 0 && (
-          <Vazio titulo="Nenhum integrante cadastrado">
-            Cadastre em{' '}
-            <Link to="/integrantes" className="text-link underline">
-              Integrantes
-            </Link>{' '}
-            e forme os{' '}
-            <Link to="/pares" className="text-link underline">
-              Pares
-            </Link>
-            .
-          </Vazio>
-        )}
-
-        {!carregando && !editor && todos.length > 0 && situacao.size === 0 && (
-          <Vazio titulo="Escalação ainda não definida" />
-        )}
-
-        {!carregando && listaPares.length > 0 && (editor || situacao.size > 0) && (
-          <ul className="flex flex-col gap-2">
-            {listaPares
-              .filter((p) => editor || sit(p.peao_id) !== 'fora' || sit(p.prenda_id) !== 'fora')
-              .map((p) => (
-                <LinhaParEscalacao
-                  key={p.id}
-                  par={p}
-                  peao={porId.get(p.peao_id)!}
-                  prenda={porId.get(p.prenda_id)!}
-                  sit={sit}
-                  editor={editor}
-                  ocupado={alterar.isPending}
-                  idDoUsuario={perfil?.integrante_id ?? null}
-                  aoDefinir={definir}
-                />
-              ))}
-          </ul>
-        )}
-
-        {!carregando && avulsos.length > 0 && (editor || avulsos.some((i) => sit(i.id) !== 'fora')) && (
-          <div>
-            <h3 className="mb-2 text-sm font-medium text-texto-suave">Sem par fixo</h3>
-            <ul className="flex flex-col gap-2">
-              {avulsos
-                .filter((i) => editor || sit(i.id) !== 'fora')
-                .map((i) => (
-                  <li key={i.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-borda p-2.5">
-                    <Avatar nome={i.nome} tamanho="sm" />
-                    <span className="min-w-0 flex-1 truncate text-sm font-medium">{i.nome}</span>
-                    <ControleSituacao
-                      valor={sit(i.id)}
-                      editor={editor}
-                      ocupado={alterar.isPending}
-                      aoMudar={(v) => definir([i.id], v)}
-                    />
-                  </li>
-                ))}
-            </ul>
-          </div>
-        )}
-      </div>
-    </section>
-  )
-}
-
-function LinhaParEscalacao({
-  par,
-  peao,
-  prenda,
-  sit,
-  editor,
-  ocupado,
-  idDoUsuario,
-  aoDefinir,
-}: {
-  par: Par
-  peao: Integrante
-  prenda: Integrante
-  sit: (id: string) => Situacao
-  editor: boolean
-  ocupado: boolean
-  idDoUsuario: string | null
-  aoDefinir: (ids: string[], nova: Situacao) => void
-}) {
-  const sitPeao = sit(peao.id)
-  const sitPrenda = sit(prenda.id)
-  const misto = sitPeao !== sitPrenda
-  const [individual, setIndividual] = useState(misto)
-  const meu = idDoUsuario === peao.id || idDoUsuario === prenda.id
-
-  return (
-    <li className={`rounded-xl border p-2.5 ${meu ? 'border-marca' : 'border-borda'}`}>
-      <div className="flex flex-wrap items-center gap-3">
-        <NumeroPar numero={par.numero} cor={par.cor} />
-        <div className="min-w-0 flex-1 text-sm leading-snug">
-          <p className="truncate">{peao.nome}</p>
-          <p className="truncate">{prenda.nome}</p>
-        </div>
-        {!individual && (
-          <ControleSituacao
-            valor={sitPeao}
-            editor={editor}
-            ocupado={ocupado}
-            aoMudar={(v) => aoDefinir([peao.id, prenda.id], v)}
-          />
-        )}
-      </div>
-
-      {individual && (
-        <ul className="mt-2 flex flex-col gap-2 border-t border-borda pt-2">
-          {[peao, prenda].map((i) => (
-            <li key={i.id} className="flex flex-wrap items-center gap-2">
-              <span className="min-w-0 flex-1 truncate text-sm">{i.nome}</span>
-              <ControleSituacao
-                valor={sit(i.id)}
-                editor={editor}
-                ocupado={ocupado}
-                aoMudar={(v) => aoDefinir([i.id], v)}
-              />
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {editor && (
-        <button
-          type="button"
-          onClick={() => setIndividual(!individual)}
-          className="mt-1 min-h-9 text-xs text-link hover:underline"
-        >
-          {individual ? 'Ajustar o par junto' : 'Ajustar separadamente'}
-        </button>
-      )}
-    </li>
-  )
-}
-
-function ControleSituacao({
-  valor,
-  editor,
-  ocupado,
-  aoMudar,
-}: {
-  valor: Situacao
-  editor: boolean
-  ocupado: boolean
-  aoMudar: (v: Situacao) => void
-}) {
-  if (!editor) {
-    return valor === 'titular' ? <Etiqueta cor="sucesso">Titular</Etiqueta> : valor === 'reserva' ? <Etiqueta cor="destaque">Reserva</Etiqueta> : null
-  }
-  return (
-    <div className="w-full sm:w-64">
-      <Segmentado<Situacao> valor={valor} aoMudar={aoMudar} opcoes={OPCOES_SITUACAO} desabilitado={ocupado} compacto />
-    </div>
   )
 }

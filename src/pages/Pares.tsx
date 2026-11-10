@@ -39,8 +39,12 @@ export function Pares() {
   return (
     <>
       <CabecalhoPagina
-        titulo="Pares"
-        subtitulo={pares.data ? `${pares.data.length} pares formados` : undefined}
+        titulo="Pares padrão"
+        subtitulo={
+          pares.data
+            ? `${pares.data.length} pares · servem de ponto de partida; em cada dança as duplas podem ser trocadas`
+            : undefined
+        }
         acoes={
           editor && (
             <Botao onClick={() => setEditando('novo')} disabled={!peoesSemPar.length || !prendasSemPar.length}>

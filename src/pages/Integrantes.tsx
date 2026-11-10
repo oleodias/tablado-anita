@@ -13,6 +13,7 @@ import {
   Segmentado,
   Vazio,
 } from '../components/ui'
+import { CamposIndumentaria } from '../components/MinhaIndumentaria'
 import { mapearPares, normalizar, type ParDoIntegrante } from '../domain/indices'
 import { podeEditar, useAuth } from '../lib/auth'
 import {
@@ -23,7 +24,7 @@ import {
   type DadosIntegrante,
 } from '../lib/dados'
 import { mensagemDeErro } from '../lib/erros'
-import { NOME_GENERO, type GeneroDanca, type Integrante } from '../types/db'
+import { NOME_GENERO, NOME_INDUMENTARIA, type GeneroDanca, type Integrante } from '../types/db'
 
 type Filtro = 'todos' | GeneroDanca | 'inativos'
 
@@ -151,6 +152,7 @@ function LinhaIntegrante({
         </p>
         <p className="truncate text-sm text-texto-suave">
           {NOME_GENERO[i.genero]}
+          {i.indumentaria && ` · ${NOME_INDUMENTARIA[i.indumentaria]}`}
           {i.apelido && ` · "${i.apelido}"`}
           {par ? ` · Par ${par.par.numero ?? '–'} com ${nomeParceiro ?? '?'}` : ' · sem par'}
         </p>
@@ -182,7 +184,16 @@ function FormularioIntegrante({
   const salvar = useSalvarIntegrante()
   const remover = useRemoverIntegrante()
   const [dados, setDados] = useState<DadosIntegrante>(
-    integrante ?? { nome: '', apelido: '', genero: 'peao', ativo: true, observacoes: '' },
+    integrante ?? {
+      nome: '',
+      apelido: '',
+      genero: 'peao',
+      ativo: true,
+      observacoes: '',
+      indumentaria: null,
+      indumentaria_danca: null,
+      indumentaria_coreografia: null,
+    },
   )
   const [confirmandoRemocao, setConfirmandoRemocao] = useState(false)
   const erro = salvar.error ?? remover.error
@@ -257,6 +268,14 @@ function FormularioIntegrante({
             { valor: 'sim', texto: 'Ativo' },
             { valor: 'nao', texto: 'Inativo' },
           ]}
+        />
+        <CamposIndumentaria
+          principal={dados.indumentaria}
+          danca={dados.indumentaria_danca}
+          coreografia={dados.indumentaria_coreografia}
+          aoMudar={(v) =>
+            setDados({ ...dados, indumentaria: v.principal, indumentaria_danca: v.danca, indumentaria_coreografia: v.coreografia })
+          }
         />
         <CampoTexto
           id="observacoes"

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { FuncaoEscalacao, GeneroDanca } from '../types/db'
-import { PALETA_PARES, corDoTextoSobre, resumirEscalacao, sugerirCor, sugerirNumero } from './pares'
+import { PALETA_PARES, corDoTextoSobre, resumirEscalacao, sugerirCor, sugerirDuplasDosPares, sugerirNumero } from './pares'
 
 function escalacao(peoes: number, prendas: number, reservas = 0) {
   const itens: { genero: GeneroDanca; funcao: FuncaoEscalacao }[] = []
@@ -52,5 +52,29 @@ describe('cor do número do par', () => {
     expect(corDoTextoSobre('#bfef45')).toBe('#000000')
     expect(corDoTextoSobre('#000075')).toBe('#ffffff')
     expect(corDoTextoSobre('#800000')).toBe('#ffffff')
+  })
+})
+
+describe('duplas da dança a partir dos pares padrão', () => {
+  const padrao = [
+    { numero: 1, peao_id: 'a', prenda_id: 'b', cor: '#e6194b' },
+    { numero: 2, peao_id: 'c', prenda_id: 'd', cor: '#3cb44b' },
+    { numero: 3, peao_id: 'e', prenda_id: 'f', cor: '#4363d8' },
+  ]
+
+  it('copia número e cor quando a dança está vazia', () => {
+    expect(sugerirDuplasDosPares(padrao, [])).toEqual(padrao)
+  })
+
+  it('pula quem já tem dupla nesta dança (troca de par) e evita números repetidos', () => {
+    // nesta dança, o peão "a" dança com a prenda "d", como dupla 1
+    const existentes = [{ numero: 1, peao_id: 'a', prenda_id: 'd', cor: '#e6194b' }]
+    const novas = sugerirDuplasDosPares(padrao, existentes)
+    expect(novas.map((n) => n.peao_id)).toEqual(['e'])
+    expect(novas[0].numero).toBe(3)
+  })
+
+  it('ignora inativos', () => {
+    expect(sugerirDuplasDosPares(padrao, [], (id) => id !== 'c')).toHaveLength(2)
   })
 })

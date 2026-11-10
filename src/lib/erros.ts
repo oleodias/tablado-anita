@@ -18,6 +18,9 @@ export function mensagemDeErro(erro: unknown): string {
   switch (e?.code) {
     case '23505': // valor repetido
       if (texto.includes('pares_numero_unico')) return 'Já existe um par com esse número.'
+      if (texto.includes('duplas_numero_unico')) return 'Já existe uma dupla com esse número nesta dança.'
+      if (texto.includes('duplas_peao_unico')) return 'Esse peão já está em outra dupla nesta dança.'
+      if (texto.includes('duplas_prenda_unica')) return 'Essa prenda já está em outra dupla nesta dança.'
       if (texto.includes('peao_id') || texto.includes('prenda_id')) return 'Essa pessoa já faz parte de outro par.'
       if (texto.includes('integrante_id')) return 'Esse integrante já está vinculado a outra conta.'
       return 'Esse registro já existe.'

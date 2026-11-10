@@ -92,3 +92,31 @@ export function corDoTextoSobre(cor: string): '#000000' | '#ffffff' {
   // contraste com preto = (L + 0.05) / 0.05 ; com branco = 1.05 / (L + 0.05)
   return (luminancia + 0.05) / 0.05 > 1.05 / (luminancia + 0.05) ? '#000000' : '#ffffff'
 }
+
+/**
+ * Sugere duplas para uma dança a partir dos pares padrão: só entram os pares
+ * cujas duas pessoas ainda não estão em nenhuma dupla desta dança e estão ativas.
+ * Mantém o número e a cor do par padrão quando estiverem livres.
+ */
+export function sugerirDuplasDosPares(
+  paresPadrao: { numero: number | null; peao_id: string; prenda_id: string; cor: string }[],
+  duplasExistentes: { numero: number; peao_id: string; prenda_id: string; cor: string }[],
+  ativo: (integranteId: string) => boolean = () => true,
+): { numero: number; peao_id: string; prenda_id: string; cor: string }[] {
+  const ocupados = new Set(duplasExistentes.flatMap((d) => [d.peao_id, d.prenda_id]))
+  const numeros = duplasExistentes.map((d) => d.numero)
+  const cores = duplasExistentes.map((d) => d.cor)
+  const novas: { numero: number; peao_id: string; prenda_id: string; cor: string }[] = []
+  const ordenados = [...paresPadrao].sort((a, b) => (a.numero ?? 999) - (b.numero ?? 999))
+  for (const p of ordenados) {
+    if (ocupados.has(p.peao_id) || ocupados.has(p.prenda_id)) continue
+    if (!ativo(p.peao_id) || !ativo(p.prenda_id)) continue
+    const numero = p.numero !== null && !numeros.includes(p.numero) ? p.numero : sugerirNumero(numeros)
+    const cor = cores.some((c) => c.toLowerCase() === p.cor.toLowerCase()) ? sugerirCor(cores) : p.cor
+    novas.push({ numero, peao_id: p.peao_id, prenda_id: p.prenda_id, cor })
+    numeros.push(numero)
+    cores.push(cor)
+    ocupados.add(p.peao_id).add(p.prenda_id)
+  }
+  return novas
+}

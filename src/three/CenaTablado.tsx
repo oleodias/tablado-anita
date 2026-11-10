@@ -5,6 +5,7 @@ import { useEffect, useRef, type ReactNode } from 'react'
 import { Box3, MathUtils, Sphere, Vector3 } from 'three'
 import type { MedidasTablado } from '../domain/tablado'
 import { ALTURA_TABLADO, ChaoGinasio, Entorno } from './Ambiente'
+import { Ginasio } from './Ginasio'
 import { PessoaReferencia, Piso } from './Piso'
 import type { VistaCamera } from './vistas'
 
@@ -16,6 +17,10 @@ interface Props {
   versaoVista: number
   rotulos: boolean
   referencia: boolean
+  /** mostra o ginásio (arquibancadas, público, teto) em volta do tablado */
+  ginasio?: boolean
+  /** tocar no vazio (fora de um dançarino) */
+  aoTocarFora?: () => void
   children?: ReactNode
 }
 
@@ -78,19 +83,20 @@ function Controles({ medidas, vista, versaoVista }: Pick<Props, 'medidas' | 'vis
   )
 }
 
-export function CenaTablado({ medidas, vista, versaoVista, rotulos, referencia, children }: Props) {
+export function CenaTablado({ medidas, vista, versaoVista, rotulos, referencia, ginasio = true, aoTocarFora, children }: Props) {
   return (
     <Canvas
       // "demand": só redesenha quando algo muda — economiza bateria no celular
       frameloop="demand"
+      onPointerMissed={aoTocarFora}
       dpr={[1, 2]}
       shadows
       camera={{ fov: 42, near: 0.1, far: 300, position: [0, 18, 22] }}
       gl={{ antialias: true, preserveDrawingBuffer: true }}
       aria-label="Tablado em 3D. Arraste para girar, use dois dedos para aproximar."
     >
-      <color attach="background" args={['#20242b']} />
-      <fog attach="fog" args={['#20242b', 45, 110]} />
+      <color attach="background" args={['#16191f']} />
+      <fog attach="fog" args={['#16191f', 50, 120]} />
       <hemisphereLight args={['#ffffff', '#3a3a3a', 1.1]} />
       <directionalLight
         position={[8, 18, 10]}
@@ -116,6 +122,7 @@ export function CenaTablado({ medidas, vista, versaoVista, rotulos, referencia, 
       <Piso medidas={medidas} rotulos={rotulos} />
       <Entorno largura={medidas.largura_m} profundidade={medidas.profundidade_m} rotulos={rotulos} />
       {referencia && <PessoaReferencia />}
+      {ginasio && <Ginasio />}
       {children}
 
       <Controles medidas={medidas} vista={vista} versaoVista={versaoVista} />

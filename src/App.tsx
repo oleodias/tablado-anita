@@ -14,6 +14,7 @@ import { Pares } from './pages/Pares'
 
 // O 3D é pesado (three.js): só é baixado quando alguém abre o Tablado.
 const Tablado = lazy(() => import('./pages/Tablado'))
+const Formacoes = lazy(() => import('./pages/Formacoes'))
 
 export function App() {
   const { carregando, sessao, perfil, precisaDefinirSenha, sair } = useAuth()
@@ -51,6 +52,14 @@ export function App() {
         <Route index element={<Inicio />} />
         <Route path="dancas" element={<Dancas />} />
         <Route path="dancas/:slug" element={<Danca />} />
+        <Route
+          path="dancas/:slug/formacoes"
+          element={
+            <Suspense fallback={<Carregando texto="Carregando o 3D…" />}>
+              <Formacoes />
+            </Suspense>
+          }
+        />
         <Route path="integrantes" element={<Integrantes />} />
         <Route path="pares" element={<Pares />} />
         <Route
