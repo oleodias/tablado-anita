@@ -1,0 +1,69 @@
+@import 'tailwindcss';
+
+/*
+ * Tokens de cor (provisórios — serão trocados pelas cores oficiais do grupo).
+ * Para mudar a identidade visual, edite apenas as variáveis abaixo.
+ */
+:root {
+  --fundo: #f6f2ea;
+  --superficie: #ffffff;
+  --superficie-2: #efe9dd;
+  --borda: #ddd3c2;
+  --texto: #1d1a16;
+  --texto-suave: #6b6256;
+  --marca: #1f3b2d;
+  --marca-texto: #ffffff;
+  --link: #1f5a3f;
+  --destaque: #b9801f;
+  --perigo: #b3261e;
+  --sucesso: #2e7d4f;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fundo: #12100d;
+    --superficie: #1c1915;
+    --superficie-2: #26221c;
+    --borda: #3a342b;
+    --texto: #f1ebe0;
+    --texto-suave: #a99f90;
+    --marca: #3f7a5c;
+    --marca-texto: #ffffff;
+    --link: #8fd1ab;
+    --destaque: #e8b04a;
+    --perigo: #f2b8b5;
+    --sucesso: #7fcf9f;
+    color-scheme: dark;
+  }
+}
+
+@theme inline {
+  --color-fundo: var(--fundo);
+  --color-superficie: var(--superficie);
+  --color-superficie-2: var(--superficie-2);
+  --color-borda: var(--borda);
+  --color-texto: var(--texto);
+  --color-texto-suave: var(--texto-suave);
+  --color-marca: var(--marca);
+  --color-marca-texto: var(--marca-texto);
+  --color-link: var(--link);
+  --color-destaque: var(--destaque);
+  --color-perigo: var(--perigo);
+  --color-sucesso: var(--sucesso);
+  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  background: var(--fundo);
+  color: var(--texto);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
