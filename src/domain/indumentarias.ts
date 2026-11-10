@@ -45,8 +45,12 @@ export interface Indumentaria {
   id: string
   nome: string
   descricao: string
+  /** peão Kamé (e padrão para quem não definiu o tipo) */
   peao: PilchaPeao
   prenda: PilchaPrenda
+  /** variações do Kairú; sem elas, usa as cores acima (só muda pala → poncho) */
+  peaoKairu?: PilchaPeao
+  prendaKairu?: PilchaPrenda
 }
 
 const CHAPEU_PALHA = '#d9c48f'
@@ -57,9 +61,9 @@ const BOTA = '#2a1d16'
 export const INDUMENTARIAS: Indumentaria[] = [
   {
     id: 'kame-vermelho',
-    nome: 'Kamé · colete vermelho e chiripá',
+    nome: 'Kamé e Kairú (conforme fotos)',
     descricao:
-      'Peão Kamé conforme foto do grupo: lenço vermelho na cabeça, camisa crua, colete vermelho fechado, chiripá caramelo sobre ceroulas brancas, botas de garrão e pala marrom-escuro comprido com franja preta. Prenda ainda sem referência.',
+      'Peão Kamé conforme foto do grupo: lenço vermelho na cabeça, camisa crua, colete vermelho fechado, chiripá caramelo sobre ceroulas brancas, botas de garrão e pala marrom-escuro comprido com franja preta. Peão Kairú conforme foto: lenço branco, poncho cinza curto com franja, calça azul-clara e botas claras. Prendas ainda sem referência confirmada.',
     peao: {
       camisa: '#efe7d6',
       colete: '#c21f2b',
@@ -76,7 +80,21 @@ export const INDUMENTARIAS: Indumentaria[] = [
       pala: '#3a2c25',
       franjaPala: '#141210',
     },
-    // PROVISÓRIO: aguardando foto da prenda Kamé (cores neutras, sem inventar detalhes)
+    peaoKairu: {
+      camisa: '#f1ede4',
+      // o colete não aparece sob o poncho na foto: fica na cor da camisa
+      colete: '#f1ede4',
+      bombacha: '#9fcbc6',
+      faixa: '#9fcbc6',
+      guaiaca: '#a98a5e',
+      botas: '#d9cdb4',
+      chapeu: 'palha',
+      corChapeu: CHAPEU_PALHA,
+      lencoCabeca: '#f2f1ec',
+      pala: '#8d9195',
+      franjaPala: '#5c6064',
+    },
+    // PROVISÓRIO: aguardando fotos confirmadas das prendas (cores neutras, sem inventar detalhes)
     prenda: {
       saia: '#e9e2d2',
       babado: '#d8cfba',
@@ -246,4 +264,11 @@ export function tipoNaDanca(i: TiposDoIntegrante): TipoIndumentaria | null {
 /** Tipo (Kamé/Kairú) que a pessoa usa na coreografia (entrada e saída). */
 export function tipoNaCoreografia(i: TiposDoIntegrante): TipoIndumentaria | null {
   return i.indumentaria_coreografia ?? i.indumentaria
+}
+
+/** Pilchas que uma pessoa usa neste conjunto, conforme o tipo (Kamé/Kairú). */
+export function pilchasDoTipo(ind: Indumentaria, tipo: TipoIndumentaria | null) {
+  return tipo === 'kairu'
+    ? { peao: ind.peaoKairu ?? ind.peao, prenda: ind.prendaKairu ?? ind.prenda }
+    : { peao: ind.peao, prenda: ind.prenda }
 }

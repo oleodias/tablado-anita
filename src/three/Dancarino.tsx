@@ -6,8 +6,8 @@
 // Atenção: olhando para +z, a ESQUERDA do boneco é o lado +x.
 import { Html } from '@react-three/drei'
 import { useThree, type ThreeEvent } from '@react-three/fiber'
-import { memo, useMemo, useRef } from 'react'
-import { Color, DoubleSide, Plane, Vector3 } from 'three'
+import { memo, useRef } from 'react'
+import { DoubleSide, Plane, Vector3 } from 'three'
 import type { Posicao } from '../domain/formacoes'
 import { corDoTextoSobre } from '../domain/pares'
 import type { PilchaPeao, PilchaPrenda } from '../domain/indumentarias'
@@ -37,19 +37,6 @@ interface Props {
 }
 
 const PELE = '#e2b48c'
-
-/**
- * PROVISÓRIO: até termos as fotos das indumentárias Kairú, os tons sóbrios são
- * obtidos escurecendo as cores do conjunto da dança.
- */
-function tonsSobrios<T extends object>(pilcha: T): T {
-  const c = new Color()
-  const resultado = { ...pilcha } as Record<string, unknown>
-  for (const [chave, valor] of Object.entries(pilcha)) {
-    if (typeof valor === 'string' && valor.startsWith('#')) resultado[chave] = `#${c.set(valor).multiplyScalar(0.5).getHexString()}`
-  }
-  return resultado as T
-}
 
 // plano do piso do tablado, usado para saber onde o dedo está ao arrastar
 const PISO = new Plane(new Vector3(0, 1, 0), -ALTURA_TABLADO)
@@ -195,7 +182,7 @@ function Peao({ p, tipo, apagado }: { p: PilchaPeao; tipo: TipoIndumentaria | nu
           </mesh>
         </group>
       )}
-      {/* Kairú: poncho (pano quadrado com abertura para a cabeça), com franja */}
+      {/* Kairú: poncho curto (até o quadril), com franja */}
       {tipo === 'kairu' && (
         <group rotation-y={Math.PI / 4}>
           <mesh position-y={1.14} castShadow>
@@ -347,8 +334,6 @@ function DancarinoBase({
   const arrasto = useRef<{ dx: number; dz: number; moveu: boolean } | null>(null)
   const ponto = useRef(new Vector3())
   const apagado = estado === 'apagado'
-  const peao = useMemo(() => (tipo === 'kairu' ? tonsSobrios(pilchaPeao) : pilchaPeao), [tipo, pilchaPeao])
-  const prenda = useMemo(() => (tipo === 'kairu' ? tonsSobrios(pilchaPrenda) : pilchaPrenda), [tipo, pilchaPrenda])
 
   function aoApertar(e: ThreeEvent<PointerEvent>) {
     e.stopPropagation()
@@ -402,7 +387,7 @@ function DancarinoBase({
         </mesh>
       )}
 
-      {genero === 'peao' ? <Peao p={peao} tipo={tipo} apagado={apagado} /> : <Prenda p={prenda} apagado={apagado} />}
+      {genero === 'peao' ? <Peao p={pilchaPeao} tipo={tipo} apagado={apagado} /> : <Prenda p={pilchaPrenda} apagado={apagado} />}
 
       {/* área de toque maior que o boneco, invisível */}
       <mesh

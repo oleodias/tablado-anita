@@ -18,7 +18,7 @@ import {
   type Posicao,
 } from '../domain/formacoes'
 import { nomeCurto } from '../domain/indices'
-import { buscarIndumentaria, INDUMENTARIAS, tipoNaDanca } from '../domain/indumentarias'
+import { buscarIndumentaria, INDUMENTARIAS, pilchasDoTipo, tipoNaDanca } from '../domain/indumentarias'
 import { nomeDaPlaca, placaNoPonto, type MedidasTablado } from '../domain/tablado'
 import { podeEditar, useAuth } from '../lib/auth'
 import { ANO_ATUAL, useAno } from '../lib/ano'
@@ -378,8 +378,8 @@ function Palco({
                 cor={p.cor}
                 numeroDupla={p.dupla?.numero ?? null}
                 tipo={tipoNaDanca(p.integrante)}
-                pilchaPeao={indumentaria.peao}
-                pilchaPrenda={indumentaria.prenda}
+                pilchaPeao={pilchasDoTipo(indumentaria, tipoNaDanca(p.integrante)).peao}
+                pilchaPrenda={pilchasDoTipo(indumentaria, tipoNaDanca(p.integrante)).prenda}
                 posicao={exibida(p.integrante.id)}
                 estado={estadoDe(p.integrante.id)}
                 mostrarNome={mostrarNomes}

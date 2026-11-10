@@ -12,7 +12,7 @@ O dono do projeto está aprendendo e vai manter o código: prefira soluções si
 
 ## Regras do grupo
 - **Duplas variam por dança**: use a tabela `duplas` (por coreografia). `pares` são só "pares padrão" para preencher rápido.
-- **Kamé / Kairú** (indumentárias inspiradas na cultura Kaingang): tipo principal em `integrantes.indumentaria`, com exceções opcionais para dança e coreografia. Kamé = pala no ombro esquerdo, cores vivas; Kairú = poncho, cores sóbrias. **Não inventar estampas nem ornamentos**: modelar só a partir das fotos enviadas pelo grupo; na dúvida, perguntar.
+- **Kamé / Kairú** (indumentárias inspiradas na cultura Kaingang): tipo principal em `integrantes.indumentaria`, com exceções opcionais para dança e coreografia. Kamé = pala comprido no ombro esquerdo, cores vivas (vermelho, caramelo); Kairú = poncho curto, tons frios e suaves (cinza, branco, azul-claro). **Não inventar estampas nem ornamentos**: modelar só a partir das fotos enviadas pelo grupo; na dúvida, perguntar.
 - Conjuntos de pilcha (cores) em `src/domain/indumentarias.ts`.
 - Entrada do grupo: centro do fundo. Saída: lateral direita dos jurados.
 
