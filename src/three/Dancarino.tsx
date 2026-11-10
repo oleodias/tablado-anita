@@ -93,18 +93,50 @@ function Peao({ p, tipo, apagado }: { p: PilchaPeao; tipo: TipoIndumentaria | nu
   const corPala = p.pala ?? p.faixa
   return (
     <group>
-      {/* botas */}
-      {[-0.08, 0.08].map((x) => (
-        <mesh key={x} position={[x, 0.11, 0.02]} castShadow>
-          <cylinderGeometry args={[0.055, 0.062, 0.22, 10]} />
-          <M c={p.botas} apagado={apagado} />
-        </mesh>
-      ))}
-      {/* bombacha (larga, presa na bota) */}
-      <mesh position-y={0.55} castShadow>
-        <cylinderGeometry args={[0.19, 0.12, 0.66, 16]} />
-        <M c={p.bombacha} apagado={apagado} />
-      </mesh>
+      {p.pernas === 'chiripa' ? (
+        <>
+          {/* botas de garrão: couro cru, cano curto e franzido */}
+          {[-0.09, 0.09].map((x) => (
+            <group key={x} position={[x, 0, 0.02]}>
+              <mesh position-y={0.13} castShadow>
+                <cylinderGeometry args={[0.075, 0.065, 0.26, 10]} />
+                <M c={p.botas} apagado={apagado} />
+              </mesh>
+              <mesh position={[0, 0.04, 0.07]}>
+                <boxGeometry args={[0.11, 0.08, 0.2]} />
+                <M c={p.botas} apagado={apagado} />
+              </mesh>
+            </group>
+          ))}
+          {/* ceroulas: calças brancas largas, franzidas no tornozelo */}
+          {[-0.09, 0.09].map((x) => (
+            <mesh key={x} position={[x, 0.45, 0]} castShadow>
+              <cylinderGeometry args={[0.1, 0.085, 0.42, 12]} />
+              <M c={p.ceroulas ?? "#f1ede4"} apagado={apagado} />
+            </mesh>
+          ))}
+          {/* chiripá: pano enrolado na cintura, até o joelho */}
+          <mesh position-y={0.65} castShadow>
+            <cylinderGeometry args={[0.19, 0.28, 0.46, 16]} />
+            <M c={p.bombacha} apagado={apagado} />
+          </mesh>
+        </>
+      ) : (
+        <>
+          {/* botas */}
+          {[-0.08, 0.08].map((x) => (
+            <mesh key={x} position={[x, 0.11, 0.02]} castShadow>
+              <cylinderGeometry args={[0.055, 0.062, 0.22, 10]} />
+              <M c={p.botas} apagado={apagado} />
+            </mesh>
+          ))}
+          {/* bombacha (larga, presa na bota) */}
+          <mesh position-y={0.55} castShadow>
+            <cylinderGeometry args={[0.19, 0.12, 0.66, 16]} />
+            <M c={p.bombacha} apagado={apagado} />
+          </mesh>
+        </>
+      )}
       {/* faixa e guaiaca na cintura */}
       <mesh position-y={0.9}>
         <cylinderGeometry args={[0.185, 0.19, 0.12, 16]} />
@@ -119,11 +151,27 @@ function Peao({ p, tipo, apagado }: { p: PilchaPeao; tipo: TipoIndumentaria | nu
         <cylinderGeometry args={[0.17, 0.155, 0.56, 16]} />
         <M c={p.camisa} apagado={apagado} />
       </mesh>
-      {/* colete: aberto na frente, mostrando a camisa */}
-      <mesh position-y={1.17}>
-        <cylinderGeometry args={[0.185, 0.17, 0.5, 18, 1, true, 0.42, Math.PI * 2 - 0.84]} />
-        <M c={p.colete} apagado={apagado} duplo />
-      </mesh>
+      {p.coleteFechado ? (
+        <>
+          {/* colete fechado, com carreira de botões */}
+          <mesh position-y={1.15}>
+            <cylinderGeometry args={[0.185, 0.172, 0.46, 18]} />
+            <M c={p.colete} apagado={apagado} />
+          </mesh>
+          {[0, 1, 2, 3, 4, 5].map((i) => (
+            <mesh key={i} position={[0, 0.97 + i * 0.07, 0.178 + i * 0.002]}>
+              <sphereGeometry args={[0.012, 6, 6]} />
+              <M c="#3a2a20" apagado={apagado} />
+            </mesh>
+          ))}
+        </>
+      ) : (
+        /* colete aberto na frente, mostrando a camisa */
+        <mesh position-y={1.17}>
+          <cylinderGeometry args={[0.185, 0.17, 0.5, 18, 1, true, 0.42, Math.PI * 2 - 0.84]} />
+          <M c={p.colete} apagado={apagado} duplo />
+        </mesh>
+      )}
       <Braco lado={1} altura={1.42} manga={p.camisa} apagado={apagado} />
       <Braco lado={-1} altura={1.42} manga={p.camisa} apagado={apagado} />
       {/* Kamé: pala comprido dobrado sobre o ombro esquerdo, com franja */}
@@ -131,18 +179,18 @@ function Peao({ p, tipo, apagado }: { p: PilchaPeao; tipo: TipoIndumentaria | nu
         <group position={[0.12, 0, 0]}>
           {[0.19, -0.19].map((z) => (
             <group key={z}>
-              <mesh position={[0, 1.07, z]}>
-                <boxGeometry args={[0.15, 0.72, 0.025]} />
+              <mesh position={[0, 0.95, z]} castShadow>
+                <boxGeometry args={[0.19, 0.98, 0.03]} />
                 <M c={corPala} apagado={apagado} />
               </mesh>
-              <mesh position={[0, 0.68, z]}>
-                <boxGeometry args={[0.15, 0.06, 0.02]} />
+              <mesh position={[0, 0.43, z]}>
+                <boxGeometry args={[0.19, 0.07, 0.02]} />
                 <M c={p.franjaPala} apagado={apagado} />
               </mesh>
             </group>
           ))}
           <mesh position-y={1.45} rotation-x={Math.PI / 2}>
-            <cylinderGeometry args={[0.19, 0.19, 0.15, 12, 1, true, -Math.PI / 2, Math.PI]} />
+            <cylinderGeometry args={[0.19, 0.19, 0.19, 12, 1, true, -Math.PI / 2, Math.PI]} />
             <M c={corPala} apagado={apagado} duplo />
           </mesh>
         </group>
@@ -169,21 +217,21 @@ function Peao({ p, tipo, apagado }: { p: PilchaPeao; tipo: TipoIndumentaria | nu
         <sphereGeometry args={[0.11, 18, 14]} />
         <M c={PELE} apagado={apagado} />
       </mesh>
-      {/* lenço amarrado na testa */}
+      {/* lenço cobrindo a cabeça, amarrado atrás, com a ponta caindo sobre o ombro */}
       {p.lencoCabeca && (
         <>
-          <mesh position-y={1.65} rotation-x={Math.PI / 2}>
-            <torusGeometry args={[0.105, 0.028, 8, 20]} />
+          <mesh position={[0, 1.615, -0.01]} rotation-x={-0.25}>
+            <sphereGeometry args={[0.118, 18, 12, 0, Math.PI * 2, 0, Math.PI / 2]} />
             <M c={p.lencoCabeca} apagado={apagado} />
           </mesh>
-          <mesh position={[0.03, 1.6, -0.12]} rotation-x={0.4}>
-            <boxGeometry args={[0.06, 0.14, 0.02]} />
+          <mesh position={[-0.05, 1.5, -0.12]} rotation-x={0.35} rotation-z={0.2}>
+            <coneGeometry args={[0.05, 0.24, 6]} />
             <M c={p.lencoCabeca} apagado={apagado} />
           </mesh>
         </>
       )}
       {/* chapéu */}
-      {p.chapeu === 'palha' ? (
+      {p.chapeu === 'nenhum' ? null : p.chapeu === 'palha' ? (
         <>
           <mesh position-y={1.71}>
             <cylinderGeometry args={[0.21, 0.22, 0.025, 20]} />

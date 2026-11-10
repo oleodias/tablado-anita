@@ -7,12 +7,18 @@ import type { Integrante, TipoIndumentaria } from '../types/db'
 export interface PilchaPeao {
   camisa: string
   colete: string
+  /** cor da bombacha OU do chiripá */
   bombacha: string
+  /** bombacha, ou chiripá (pano enrolado até o joelho) sobre ceroulas brancas */
+  pernas?: 'bombacha' | 'chiripa'
+  ceroulas?: string
+  /** colete fechado com botões (padrão: aberto) */
+  coleteFechado?: boolean
   faixa: string
   guaiaca: string
   botas: string
   /** chapéu de palha alto (como nas fotos) ou de feltro (aba larga) */
-  chapeu: 'palha' | 'feltro'
+  chapeu: 'palha' | 'feltro' | 'nenhum'
   corChapeu: string
   /** lenço amarrado na testa, por baixo do chapéu (null = sem) */
   lencoCabeca: string | null
@@ -49,6 +55,39 @@ const GUAIACA_COURO = '#c9ab7a'
 const BOTA = '#2a1d16'
 
 export const INDUMENTARIAS: Indumentaria[] = [
+  {
+    id: 'kame-vermelho',
+    nome: 'Kamé · colete vermelho e chiripá',
+    descricao:
+      'Peão Kamé conforme foto do grupo: lenço vermelho na cabeça, camisa crua, colete vermelho fechado, chiripá caramelo sobre ceroulas brancas, botas de garrão e pala marrom-escuro comprido com franja preta. Prenda ainda sem referência.',
+    peao: {
+      camisa: '#efe7d6',
+      colete: '#c21f2b',
+      coleteFechado: true,
+      bombacha: '#b5793f',
+      pernas: 'chiripa',
+      ceroulas: '#f1ede4',
+      faixa: '#c21f2b',
+      guaiaca: '#a98a5e',
+      botas: '#8a6a3c',
+      chapeu: 'palha',
+      corChapeu: CHAPEU_PALHA,
+      lencoCabeca: '#c21f2b',
+      pala: '#3a2c25',
+      franjaPala: '#141210',
+    },
+    // PROVISÓRIO: aguardando foto da prenda Kamé (cores neutras, sem inventar detalhes)
+    prenda: {
+      saia: '#e9e2d2',
+      babado: '#d8cfba',
+      corpete: '#e9e2d2',
+      detalheCorpete: '#d8cfba',
+      mangas: '#e9e2d2',
+      gola: '#d8cfba',
+      cabelo: '#4a2f1f',
+      flor: '#d8cfba',
+    },
+  },
   {
     id: 'telha-laranja',
     nome: 'Colete telha · vestido laranja',
