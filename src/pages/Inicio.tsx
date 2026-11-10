@@ -130,7 +130,20 @@ export function Inicio() {
         </section>
       )}
 
-      <p className="text-sm text-texto-suave">Em breve: tablado 3D e formações de cada dança.</p>
+      <Link
+        to="/tablado"
+        className="flex items-center gap-4 rounded-2xl border border-borda bg-superficie p-4 transition hover:bg-superficie-2"
+      >
+        <span className="flex size-11 items-center justify-center rounded-xl bg-marca/15 text-link">
+          <Icone nome="tablado" className="size-6" />
+        </span>
+        <div>
+          <p className="font-semibold">Tablado em 3D</p>
+          <p className="text-sm text-texto-suave">Veja o tablado do ENART com as placas, mesas e conjunto musical.</p>
+        </div>
+      </Link>
+
+      <p className="text-sm text-texto-suave">Em breve: formações de cada dança no tablado.</p>
     </div>
   )
 }

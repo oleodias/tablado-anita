@@ -53,6 +53,17 @@ export interface Coreografia {
   observacoes: string | null
 }
 
+export interface Tablado {
+  id: string
+  nome: string
+  largura_m: number
+  profundidade_m: number
+  placa_largura_m: number | null
+  placa_profundidade_m: number | null
+  padrao: boolean
+  config: { estimado?: boolean; provisorio?: boolean }
+}
+
 export interface ItemEscalacao {
   coreografia_id: string
   integrante_id: string

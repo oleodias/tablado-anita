@@ -14,7 +14,7 @@ formações de cada dança, entrada e saída, visualização em 3D.
 | Estilo | Tailwind CSS | visual; cores em `src/index.css` |
 | Dados | Supabase (Postgres + Auth) | banco, login e permissões |
 | Hospedagem | GitHub Pages | site gratuito, publicado automaticamente |
-| 3D (próximas fases) | Three.js + React Three Fiber | tablado e dançarinos |
+| 3D | Three.js + React Three Fiber + drei | tablado (e, nas próximas fases, os dançarinos) |
 
 ## Estrutura
 
@@ -27,6 +27,7 @@ src/
   pages/              uma tela por arquivo
   lib/                conexão com o Supabase, login, utilidades
   domain/             regras do regulamento ENART (com testes)
+  three/              cena 3D do tablado (carregada só quando abre a tela Tablado)
   types/              tipos das tabelas do banco
 supabase/
   migrations/         alterações do banco, em ordem (aplicar no SQL Editor)
@@ -42,6 +43,7 @@ docs/                 guias de configuração e levantamento do tablado
 | Início | todos | suas danças do ano, seu par, atalhos |
 | Danças | todos | as 28 danças por bloco, filtro por ano (rodízio do regulamento) |
 | Dança | todos (edição: professores) | tipo, observações e escalação (titular/reserva) com alerta de 8 a 12 pares |
+| Tablado | todos (medidas: professores) | tablado do ENART em 3D com placas (A1, B2…), mesas e conjunto musical; vistas Geral, De cima, Jurados e Lateral |
 | Integrantes | todos (edição: professores) | cadastro de dançarinos, busca e filtros |
 | Pares | todos (edição: professores) | peão + prenda, número e cor do par |
 | Acessos | admin | papel de cada conta e vínculo com o integrante |

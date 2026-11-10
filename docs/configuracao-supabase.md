@@ -18,7 +18,8 @@ aplicados na ordem do nome, **cada um uma única vez**:
 | Arquivo | Fase | Aplicado? |
 |---|---|---|
 | `20261110000001_estrutura_inicial.sql` | 0 | sim |
-| `20261111000001_fase2_pares_escalacao.sql` | 2 | aplicar antes de publicar a fase 2 |
+| `20261111000001_fase2_pares_escalacao.sql` | 2 | sim |
+| `20261112000001_fase1_tablado_estimado.sql` | 1 | aplicar antes de publicar o tablado 3D |
 
 ## 2. Configurar os endereços de login
 

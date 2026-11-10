@@ -13,7 +13,8 @@ O dono do projeto está aprendendo e vai manter o código: prefira soluções si
 ## Banco
 - Toda mudança de banco é um novo arquivo em `supabase/migrations/` (nunca editar migrações já aplicadas).
 - Toda tabela nova precisa de RLS: membros leem (`e_membro()`), editores escrevem (`pode_editar()`).
-- Coordenadas do tablado em metros, origem no centro; z negativo = lado dos jurados; rotação 0 = de frente para os jurados.
+- Coordenadas do tablado em metros, origem no centro; **z positivo = frente (mesa dos jurados)**, x positivo = direita de quem está na mesa dos jurados; rotação 0 = de frente para os jurados. Placas: colunas A, B, C… (esquerda→direita dos jurados), fileiras 1, 2, 3… (frente→fundo). Ver `src/domain/tablado.ts`.
+- Cena 3D em `src/three/` (React Three Fiber + drei), carregada sob demanda (lazy) para não pesar o resto do app.
 - Teste migrações num Postgres local com stub de `auth.users`/`auth.uid()` antes de pedir para aplicar.
 
 ## Verificação antes de entregar

@@ -13,6 +13,7 @@ interface ItemMenu {
 const MENU: ItemMenu[] = [
   { para: '/', texto: 'Início', icone: 'inicio' },
   { para: '/dancas', texto: 'Danças', icone: 'dancas' },
+  { para: '/tablado', texto: 'Tablado', icone: 'tablado' },
   { para: '/integrantes', texto: 'Integrantes', icone: 'integrantes' },
   { para: '/pares', texto: 'Pares', icone: 'pares' },
   { para: '/acessos', texto: 'Acessos', icone: 'acessos', soAdmin: true },

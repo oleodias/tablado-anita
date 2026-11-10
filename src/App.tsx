@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { Layout } from './components/Layout'
 import { Aviso, Carregando } from './components/ui'
@@ -10,6 +11,9 @@ import { Entrar } from './pages/Entrar'
 import { Inicio } from './pages/Inicio'
 import { Integrantes } from './pages/Integrantes'
 import { Pares } from './pages/Pares'
+
+// O 3D é pesado (three.js): só é baixado quando alguém abre o Tablado.
+const Tablado = lazy(() => import('./pages/Tablado'))
 
 export function App() {
   const { carregando, sessao, perfil, precisaDefinirSenha, sair } = useAuth()
@@ -49,6 +53,14 @@ export function App() {
         <Route path="dancas/:slug" element={<Danca />} />
         <Route path="integrantes" element={<Integrantes />} />
         <Route path="pares" element={<Pares />} />
+        <Route
+          path="tablado"
+          element={
+            <Suspense fallback={<Carregando texto="Carregando o 3D…" />}>
+              <Tablado />
+            </Suspense>
+          }
+        />
         {perfil.papel === 'admin' && <Route path="acessos" element={<Acessos />} />}
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

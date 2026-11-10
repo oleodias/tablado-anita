@@ -12,6 +12,7 @@ import type {
   PapelUsuario,
   Par,
   Perfil,
+  Tablado,
   TipoDanca,
 } from '../types/db'
 import { supabase } from './supabase'
@@ -30,6 +31,7 @@ export const chaves = {
   pares: ['pares'] as const,
   dancas: ['dancas'] as const,
   perfis: ['perfis'] as const,
+  tabladoPadrao: ['tablado-padrao'] as const,
   coreografia: (dancaId: number, ano: number) => ['coreografia', dancaId, ano] as const,
   escalacao: (coreografiaId: string) => ['escalacao', coreografiaId] as const,
   escalacoesDoAno: (ano: number) => ['escalacoes-do-ano', ano] as const,
@@ -260,5 +262,48 @@ export function useAtualizarPerfil() {
       if (error) throw error
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: chaves.perfis }),
+  })
+}
+
+// -----------------------------------------------------------------------------
+// Tablado
+// -----------------------------------------------------------------------------
+
+/** O Postgres devolve colunas numeric como texto; convertemos para número. */
+function normalizarTablado(t: Record<string, unknown>): Tablado {
+  const num = (v: unknown) => (v === null || v === undefined ? null : Number(v))
+  return {
+    ...(t as unknown as Tablado),
+    largura_m: Number(t.largura_m),
+    profundidade_m: Number(t.profundidade_m),
+    placa_largura_m: num(t.placa_largura_m),
+    placa_profundidade_m: num(t.placa_profundidade_m),
+  }
+}
+
+export function useTabladoPadrao() {
+  return useQuery({
+    queryKey: chaves.tabladoPadrao,
+    queryFn: async () => {
+      const t = verificar<Record<string, unknown> | null>(
+        await supabase.from('tablados').select('*').eq('padrao', true).maybeSingle(),
+      )
+      return t ? normalizarTablado(t) : null
+    },
+    staleTime: 5 * 60_000,
+  })
+}
+
+export function useSalvarTablado() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({
+      id,
+      ...dados
+    }: Pick<Tablado, 'id' | 'largura_m' | 'profundidade_m' | 'placa_largura_m' | 'placa_profundidade_m' | 'config'>) => {
+      const { error } = await supabase.from('tablados').update(dados).eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: chaves.tabladoPadrao }),
   })
 }
