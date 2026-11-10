@@ -91,7 +91,7 @@ export const NOMES_MODELOS: Record<ModeloFormacao, string> = {
   filas: 'Duas filas',
 }
 
-const ESPACO_PAR = 0.7 // distância entre peão e prenda do mesmo par (m)
+const ESPACO_PAR = 1 // distância entre peão e prenda do mesmo par (m)
 
 /**
  * Gera posições para os pares e para quem está sem par, num tablado de

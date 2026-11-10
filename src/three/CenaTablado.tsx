@@ -1,11 +1,13 @@
 // Cena 3D do tablado: luzes, câmera com vistas pré-definidas e o conteúdo.
-import { CameraControls, Html } from '@react-three/drei'
+import { CameraControls } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
 import { useEffect, useRef, type ReactNode } from 'react'
 import { Box3, MathUtils, Sphere, Vector3 } from 'three'
 import type { MedidasTablado } from '../domain/tablado'
 import { ALTURA_TABLADO, ChaoGinasio, Entorno } from './Ambiente'
 import { Ginasio } from './Ginasio'
+import { CamadaDeRotulos } from './camadaDeRotulos'
+import { HtmlNaCena } from './HtmlNaCena'
 import { PessoaReferencia, Piso } from './Piso'
 import type { VistaCamera } from './vistas'
 
@@ -84,7 +86,10 @@ function Controles({ medidas, vista, versaoVista }: Pick<Props, 'medidas' | 'vis
 }
 
 export function CenaTablado({ medidas, vista, versaoVista, rotulos, referencia, ginasio = true, aoTocarFora, children }: Props) {
+  const camada = useRef<HTMLDivElement>(null)
   return (
+    <div className="relative h-full w-full">
+    <CamadaDeRotulos.Provider value={camada}>
     <Canvas
       // "demand": só redesenha quando algo muda — economiza bateria no celular
       frameloop="demand"
@@ -114,9 +119,9 @@ export function CenaTablado({ medidas, vista, versaoVista, rotulos, referencia, 
         rótulo montado na cena nunca aparece. Este rótulo vazio e invisível é
         montado antes de todos e "absorve" o problema. Não remover.
       */}
-      <Html position={[0, -50, 0]} style={{ display: 'none' }} aria-hidden>
+      <HtmlNaCena position={[0, -50, 0]} style={{ display: 'none' }} aria-hidden>
         <span />
-      </Html>
+      </HtmlNaCena>
 
       <ChaoGinasio />
       <Piso medidas={medidas} rotulos={rotulos} />
@@ -127,5 +132,9 @@ export function CenaTablado({ medidas, vista, versaoVista, rotulos, referencia, 
 
       <Controles medidas={medidas} vista={vista} versaoVista={versaoVista} />
     </Canvas>
+    </CamadaDeRotulos.Provider>
+    {/* camada dos rótulos: por cima do canvas, sem bloquear os toques */}
+    <div ref={camada} className="pointer-events-none absolute inset-0 overflow-hidden" />
+    </div>
   )
 }

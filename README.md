@@ -43,7 +43,7 @@ docs/                 guias de configuração e levantamento do tablado
 | Início | todos | suas danças do ano, seu par, atalhos |
 | Danças | todos | as 28 danças por bloco, filtro por ano (rodízio do regulamento) |
 | Dança | todos (edição: professores) | duplas **desta dança** (podem ser diferentes em cada dança), escalação titular/reserva com alerta de 8 a 12 pares, tipo e observações |
-| Formações | todos (edição: professores) | dançarinos no tablado 3D com a pilcha da dança; arrastar, girar, vários momentos, transição animada, modelos (roda, filas, pares) |
+| Posições | todos (edição: professores) | mapa do tablado visto de cima: toca no dançarino, toca na placa; vários momentos; botão "Ver em 3D" (só visualização, com as pilchas) |
 | Tablado | todos (medidas: professores) | tablado do ENART em 3D com placas (A1, B2…), mesas e conjunto musical; vistas Geral, De cima, Jurados e Lateral |
 | Integrantes | todos (edição: professores) | cadastro de dançarinos, busca e filtros |
 | Pares padrão | todos (edição: professores) | pares habituais, usados só como ponto de partida das duplas de cada dança |

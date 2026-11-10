@@ -1,5 +1,5 @@
 // Tudo o que fica em volta do tablado: chão do ginásio, mesas, conjunto musical.
-import { Html } from '@react-three/drei'
+import { HtmlNaCena } from './HtmlNaCena'
 import type { ReactNode } from 'react'
 
 /** Altura do piso do tablado em relação ao chão do ginásio (metros). */
@@ -92,7 +92,7 @@ export function Rotulo({
   destaque?: boolean
 }) {
   return (
-    <Html position={posicao} center zIndexRange={[10, 0]} style={{ pointerEvents: 'none' }}>
+    <HtmlNaCena position={posicao} center zIndexRange={[10, 0]} style={{ pointerEvents: 'none' }}>
       <span
         className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-semibold shadow ${
           destaque ? 'bg-marca text-marca-texto' : 'bg-black/65 text-white'
@@ -100,7 +100,7 @@ export function Rotulo({
       >
         {children}
       </span>
-    </Html>
+    </HtmlNaCena>
   )
 }
 

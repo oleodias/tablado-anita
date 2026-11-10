@@ -16,6 +16,12 @@ O dono do projeto está aprendendo e vai manter o código: prefira soluções si
 - Conjuntos de pilcha (cores) em `src/domain/indumentarias.ts`.
 - Entrada do grupo: centro do fundo. Saída: lateral direita dos jurados.
 
+## Simplicidade (pedido do grupo)
+- Marcação de posições é no **mapa 2D** (`src/components/MapaTablado.tsx`): tocar no dançarino, tocar na placa. O 3D é só para visualizar.
+- Nada de passos de preparação: pares padrão entram sozinhos na primeira abertura da dança (`src/lib/prepararDanca.ts`) e o primeiro momento é criado sozinho.
+- Opções pouco usadas ficam recolhidas em "Mais opções".
+- Rótulos HTML no 3D sempre via `HtmlNaCena` (nunca o `<Html>` do drei direto).
+
 ## Banco
 - Toda mudança de banco é um novo arquivo em `supabase/migrations/` (nunca editar migrações já aplicadas).
 - Toda tabela nova precisa de RLS: membros leem (`e_membro()`), editores escrevem (`pode_editar()`).

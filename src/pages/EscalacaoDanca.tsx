@@ -31,6 +31,7 @@ import {
   type DadosDupla,
 } from '../lib/dados'
 import { mensagemDeErro } from '../lib/erros'
+import { usePrepararDanca } from '../lib/prepararDanca'
 import type { Danca, Dupla, FuncaoEscalacao, Integrante } from '../types/db'
 
 type Situacao = FuncaoEscalacao | 'fora'
@@ -47,6 +48,7 @@ export function EscalacaoDanca({ danca, ano }: { danca: Danca; ano: number }) {
   const alterar = useAlterarEscalacao(danca.id, ano)
   const salvarDuplas = useSalvarDuplas(danca.id, ano)
   const removerDupla = useRemoverDupla(danca.id, ano)
+  const preparando = usePrepararDanca(danca.id, ano, editor)
   const [editando, setEditando] = useState<Dupla | 'nova' | null>(null)
   const [adicionandoAvulso, setAdicionandoAvulso] = useState(false)
   const [confirmandoLimpeza, setConfirmandoLimpeza] = useState(false)
@@ -71,7 +73,7 @@ export function EscalacaoDanca({ danca, ano }: { danca: Danca; ano: number }) {
 
   const ocupado = alterar.isPending || salvarDuplas.isPending || removerDupla.isPending
   const erro = alterar.error ?? salvarDuplas.error ?? removerDupla.error
-  const carregando = integrantes.isLoading || coreografia.isLoading || escalacao.isLoading || duplas.isLoading
+  const carregando = preparando || integrantes.isLoading || coreografia.isLoading || escalacao.isLoading || duplas.isLoading
 
   const definir = (ids: string[], nova: Situacao) =>
     alterar.mutate(ids.map((integranteId) => ({ integranteId, funcao: nova === 'fora' ? null : nova })))
@@ -134,7 +136,7 @@ export function EscalacaoDanca({ danca, ano }: { danca: Danca; ano: number }) {
         {!carregando && listaDuplas.length === 0 && (integrantes.data ?? []).length > 0 && (
           <Vazio titulo="Nenhuma dupla nesta dança">
             {editor
-              ? 'Toque em "Usar pares padrão" para começar com os pares de sempre, ou em "+ Dupla" para montar uma a uma.'
+              ? 'Cadastre os pares padrão em “Pares” para eles entrarem sozinhos, ou toque em “+ Dupla” para montar uma a uma.'
               : 'Os professores ainda não definiram as duplas.'}
           </Vazio>
         )}

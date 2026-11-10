@@ -57,8 +57,8 @@ function DetalheDanca({ danca, ano }: { danca: TDanca; ano: number }) {
           <Icone nome="tablado" className="size-6" />
         </span>
         <div className="min-w-0">
-          <p className="font-semibold">Formações no tablado</p>
-          <p className="text-sm text-texto-suave">Veja e organize onde cada dupla fica em cada momento da dança.</p>
+          <p className="font-semibold">Marcar posições no tablado</p>
+          <p className="text-sm text-texto-suave">Mapa do tablado: toque no dançarino e depois na placa onde ele fica.</p>
         </div>
       </Link>
 

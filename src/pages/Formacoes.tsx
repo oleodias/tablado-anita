@@ -3,6 +3,7 @@
 // automaticamente; dançarinos visualizam e acompanham a própria posição.
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import { MapaTablado } from '../components/MapaTablado'
 import { Aviso, Botao, Campo, CampoTexto, Carregando, Etiqueta, Folha, Icone, Selecao, Vazio } from '../components/ui'
 import {
   descreverDirecao,
@@ -39,6 +40,7 @@ import {
   useTabladoPadrao,
 } from '../lib/dados'
 import { mensagemDeErro } from '../lib/erros'
+import { usePrepararDanca } from '../lib/prepararDanca'
 import { CenaTablado } from '../three/CenaTablado'
 import { Dancarino, type EstadoDancarino } from '../three/Dancarino'
 import { NOMES_VISTAS, type VistaCamera } from '../three/vistas'
@@ -77,6 +79,7 @@ function EditorFormacoes({ danca, ano }: { danca: Danca; ano: number }) {
   const formacoes = useFormacoes(coreografiaId)
   const posicoes = usePosicoes(coreografiaId)
   const linkDanca = `/dancas/${danca.slug}${ano === ANO_ATUAL ? '' : `?ano=${ano}`}`
+  const preparando = usePrepararDanca(danca.id, ano, editor)
 
   const carregando =
     tablado.isLoading || integrantes.isLoading || coreografia.isLoading || escalacao.isLoading || duplas.isLoading || formacoes.isLoading || posicoes.isLoading
@@ -106,7 +109,7 @@ function EditorFormacoes({ danca, ano }: { danca: Danca; ano: number }) {
     return lista
   }, [integrantes.data, escalacao.data, duplas.data])
 
-  if (carregando) return <Carregando texto="Carregando formações…" />
+  if (carregando || preparando) return <Carregando texto="Carregando…" />
   if (!tablado.data) return <Aviso tipo="erro">Não foi possível carregar o tablado.</Aviso>
 
   return (
@@ -115,19 +118,19 @@ function EditorFormacoes({ danca, ano }: { danca: Danca; ano: number }) {
         <Icone nome="voltar" className="size-4" /> {danca.nome}
       </Link>
       <header>
-        <h1 className="text-2xl font-semibold">Formações · {danca.nome}</h1>
+        <h1 className="text-2xl font-semibold">Posições · {danca.nome}</h1>
         <p className="mt-1 text-sm text-texto-suave">
           ENART {ano} · {participantes.length} titulares no tablado
         </p>
       </header>
 
       {participantes.length === 0 ? (
-        <Vazio titulo="Ninguém escalado como titular">
-          Defina as duplas e a escalação em{' '}
+        <Vazio titulo="Ninguém nesta dança ainda">
+          {editor ? 'Cadastre os pares padrão em “Pares” ou monte as duplas em' : 'Os professores ainda não definiram quem dança. Veja em'}{' '}
           <Link to={linkDanca} className="text-link underline">
             {danca.nome}
-          </Link>{' '}
-          primeiro.
+          </Link>
+          .
         </Vazio>
       ) : (
         <Palco
@@ -182,13 +185,11 @@ function Palco({
   )
   const [vista, setVista] = useState<VistaCamera>('geral')
   const [versaoVista, setVersaoVista] = useState(0)
-  const [mostrarNomes, setMostrarNomes] = useState(true)
-  const [mostrarPlacas, setMostrarPlacas] = useState(false)
+  /** 'mapa' = marcação vista de cima (padrão); '3d' = só para olhar */
+  const [modo, setModo] = useState<'mapa' | '3d'>('mapa')
   const [ginasio, setGinasio] = useState(true)
-  const [foco, setFoco] = useState(false)
   const [encaixe, setEncaixe] = useState(true)
   const [modelo, setModelo] = useState<ModeloFormacao>('pares')
-  const [arrasto, setArrasto] = useState<{ id: string; x: number; z: number } | null>(null)
   const [animadas, setAnimadas] = useState<Map<string, Posicao> | null>(null)
   const [tocando, setTocando] = useState(false)
   const [editandoFormacao, setEditandoFormacao] = useState(false)
@@ -219,16 +220,11 @@ function Palco({
   )
 
   const atuais = useMemo(() => posicoesDaFormacao(formacaoAtual?.id), [posicoesDaFormacao, formacaoAtual?.id])
-  const semPosicaoSalva = participantes.filter(
-    (p) => !posicoes.some((s) => s.formacao_id === formacaoAtual?.id && s.integrante_id === p.integrante.id),
-  ).length
 
   /** Posição exibida agora (animação > arrasto > salva). */
   const exibida = (id: string): Posicao => {
     if (animadas?.has(id)) return animadas.get(id)!
-    const base = atuais.get(id)!
-    if (arrasto?.id === id) return { ...base, x: arrasto.x, z: arrasto.z }
-    return base
+    return atuais.get(id)!
   }
 
   // ---------------------------------------------------------------- gravação
@@ -249,26 +245,17 @@ function Palco({
     if (ultimo) salvar.mutate(ultimo)
   }
 
-  const aoArrastar = useCallback(
-    (id: string, x: number, z: number) => {
-      let nx = limitar(x, medidas.largura_m / 2)
-      let nz = limitar(z, medidas.profundidade_m / 2)
-      if (encaixe) {
-        nx = encaixar(nx, passoX)
-        nz = encaixar(nz, passoZ)
-      }
-      setArrasto({ id, x: nx, z: nz })
-    },
-    [encaixe, medidas.largura_m, medidas.profundidade_m, passoX, passoZ],
-  )
-
-  // aoSoltar depende do estado do arrasto; usamos uma ref para manter o callback estável (memo dos dançarinos)
-  const refSoltar = useRef<(id: string, moveu: boolean) => void>(() => undefined)
-  refSoltar.current = (id, moveu) => {
-    if (moveu && arrasto?.id === id) gravar([{ id, posicao: { ...atuais.get(id)!, x: arrasto.x, z: arrasto.z } }])
-    setArrasto(null)
+  /** Mantém o ponto dentro da área e encaixa na grade das placas (se ligado). */
+  const ajustar = (x: number, z: number) => {
+    const nx = limitar(x, medidas.largura_m / 2, 1)
+    const nz = limitar(z, medidas.profundidade_m / 2, 1)
+    return encaixe ? { x: encaixar(nx, passoX), z: encaixar(nz, passoZ) } : { x: nx, z: nz }
   }
-  const aoSoltar = useCallback((id: string, moveu: boolean) => refSoltar.current(id, moveu), [])
+
+  function moverPara(id: string, x: number, z: number) {
+    gravar([{ id, posicao: { ...atuais.get(id)!, x, z } }])
+  }
+
   const aoSelecionar = useCallback((id: string) => setSelecionado(id), [])
 
   // ---------------------------------------------------------------- formações
@@ -284,6 +271,16 @@ function Palco({
       { onSuccess: () => setIndice(formacoes.length) },
     )
   }
+
+  // Professores não precisam de um passo extra: o primeiro momento nasce sozinho.
+  const criouPrimeira = useRef(false)
+  useEffect(() => {
+    if (!editor || formacoes.length > 0 || criouPrimeira.current) return
+    criouPrimeira.current = true
+    criarFormacao(true)
+    // só interessa a primeira vez em que a lista está vazia
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editor, formacoes.length])
 
   function mover(direcao: -1 | 1) {
     if (!formacaoAtual) return
@@ -340,7 +337,7 @@ function Palco({
     if (!selecionado) return 'normal'
     if (id === selecionado) return 'selecionado'
     if (id === sel?.parceiroId) return 'par'
-    return foco ? 'apagado' : 'normal'
+    return 'normal'
   }
 
   function girar(novaRotacao: number) {
@@ -355,60 +352,122 @@ function Palco({
 
   const erro = salvar.error ?? criar.error ?? remover.error ?? reordenar.error ?? definirIndumentaria.error
 
+  const direcoes: { texto: string; rotacao: number }[] = [
+    { texto: 'Jurados', rotacao: 0 },
+    { texto: 'Fundo', rotacao: 180 },
+    { texto: 'Esquerda', rotacao: 90 },
+    { texto: 'Direita', rotacao: 270 },
+  ]
+
   return (
     <>
-      {/* ------------------------------------------------ cena 3D */}
-      <div className="relative h-[calc(100dvh-20rem)] min-h-[360px] overflow-hidden rounded-2xl border border-borda bg-[#16191f] md:h-[calc(100dvh-16rem)]">
-        <Suspense fallback={<Carregando texto="Montando o tablado…" />}>
-          <CenaTablado
-            medidas={medidas}
-            vista={vista}
-            versaoVista={versaoVista}
-            rotulos={mostrarPlacas}
-            referencia={false}
-            ginasio={ginasio}
-            aoTocarFora={() => setSelecionado(null)}
-          >
-            {participantes.map((p) => (
-              <Dancarino
-                key={p.integrante.id}
-                id={p.integrante.id}
-                nome={nomeCurto(p.integrante)}
-                genero={p.integrante.genero}
-                cor={p.cor}
-                numeroDupla={p.dupla?.numero ?? null}
-                tipo={tipoNaDanca(p.integrante)}
-                pilchaPeao={pilchasDoTipo(indumentaria, tipoNaDanca(p.integrante)).peao}
-                pilchaPrenda={pilchasDoTipo(indumentaria, tipoNaDanca(p.integrante)).prenda}
-                posicao={exibida(p.integrante.id)}
-                estado={estadoDe(p.integrante.id)}
-                mostrarNome={mostrarNomes}
-                editavel={editor && !tocando && !!formacaoAtual}
-                aoSelecionar={aoSelecionar}
-                aoArrastar={aoArrastar}
-                aoSoltar={aoSoltar}
-              />
-            ))}
-          </CenaTablado>
-        </Suspense>
-
-        <div className="pointer-events-none absolute inset-x-0 top-0 flex flex-wrap items-start justify-between gap-2 p-2">
-          {formacaoAtual && (
-            <span className="rounded-full bg-black/60 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur">
-              {indice + 1}/{formacoes.length} · {formacaoAtual.nome ?? `Momento ${indice + 1}`}
-            </span>
+      {/* ------------------------------------------------ momentos da dança */}
+      {formacoes.length > 0 && (
+        <ol className="flex gap-2 overflow-x-auto pb-1" aria-label="Momentos da dança">
+          {formacoes.map((f, i) => (
+            <li key={f.id}>
+              <button
+                type="button"
+                disabled={tocando}
+                onClick={() => setIndice(i)}
+                aria-current={i === indice}
+                className={`min-h-11 whitespace-nowrap rounded-xl border px-3 text-sm font-medium transition ${
+                  i === indice ? 'border-marca bg-marca text-marca-texto' : 'border-borda bg-superficie hover:bg-superficie-2'
+                }`}
+              >
+                {i + 1}. {f.nome ?? `Momento ${i + 1}`}
+              </button>
+            </li>
+          ))}
+          {editor && (
+            <li>
+              <button
+                type="button"
+                disabled={criar.isPending || tocando}
+                onClick={() => criarFormacao(false)}
+                className="min-h-11 whitespace-nowrap rounded-xl border border-dashed border-borda px-3 text-sm font-medium text-link"
+              >
+                + Novo momento
+              </button>
+            </li>
           )}
-          <div className="ml-auto flex flex-wrap justify-end gap-1.5">
-            <Alternar ativo={mostrarNomes} aoMudar={setMostrarNomes} texto="Nomes" />
-            <Alternar ativo={mostrarPlacas} aoMudar={setMostrarPlacas} texto="Placas" />
-            <Alternar ativo={foco} aoMudar={setFoco} texto="Foco" />
+        </ol>
+      )}
+
+      {formacoes.length === 0 && !editor && (
+        <Aviso tipo="info">Os professores ainda não marcaram as posições desta dança.</Aviso>
+      )}
+
+      {editor && formacaoAtual && modo === 'mapa' && (
+        <p className="text-sm text-texto-suave">
+          {sel ? (
+            <>
+              Agora toque na placa onde <b className="text-texto">{nomeCurto(sel.integrante)}</b> deve ficar (ou arraste a bolinha).
+            </>
+          ) : (
+            'Toque numa bolinha para escolher o dançarino. O número é o da dupla: bolinha cheia = peão, bolinha branca = prenda.'
+          )}
+        </p>
+      )}
+
+      {/* ------------------------------------------------ mapa (marcação) ou 3D (só olhar) */}
+      {modo === 'mapa' ? (
+        <div className="mx-auto w-full max-w-2xl">
+          <MapaTablado
+            medidas={medidas}
+            marcadores={participantes.map((p) => ({
+              id: p.integrante.id,
+              nome: nomeCurto(p.integrante),
+              genero: p.integrante.genero,
+              cor: p.cor,
+              numero: p.dupla?.numero ?? null,
+              posicao: exibida(p.integrante.id),
+            }))}
+            selecionado={selecionado}
+            parceiro={sel?.parceiroId ?? null}
+            editavel={editor && !tocando && !!formacaoAtual}
+            aoSelecionar={setSelecionado}
+            aoMover={moverPara}
+            ajustar={ajustar}
+          />
+        </div>
+      ) : (
+        <div className="relative h-[calc(100dvh-20rem)] min-h-[360px] overflow-hidden rounded-2xl border border-borda bg-[#16191f]">
+          <Suspense fallback={<Carregando texto="Montando o tablado…" />}>
+            <CenaTablado
+              medidas={medidas}
+              vista={vista}
+              versaoVista={versaoVista}
+              rotulos={false}
+              referencia={false}
+              ginasio={ginasio}
+              aoTocarFora={() => setSelecionado(null)}
+            >
+              {participantes.map((p) => (
+                <Dancarino
+                  key={p.integrante.id}
+                  id={p.integrante.id}
+                  nome={nomeCurto(p.integrante)}
+                  genero={p.integrante.genero}
+                  cor={p.cor}
+                  numeroDupla={p.dupla?.numero ?? null}
+                  tipo={tipoNaDanca(p.integrante)}
+                  pilchaPeao={pilchasDoTipo(indumentaria, tipoNaDanca(p.integrante)).peao}
+                  pilchaPrenda={pilchasDoTipo(indumentaria, tipoNaDanca(p.integrante)).prenda}
+                  posicao={exibida(p.integrante.id)}
+                  estado={estadoDe(p.integrante.id)}
+                  mostrarNome
+                  editavel={false}
+                  aoSelecionar={aoSelecionar}
+                />
+              ))}
+            </CenaTablado>
+          </Suspense>
+          <div className="pointer-events-none absolute right-0 top-0 p-2">
             <Alternar ativo={ginasio} aoMudar={setGinasio} texto="Ginásio" />
           </div>
-        </div>
-
-        <div className="absolute inset-x-0 bottom-0 p-2">
-          <div className="mx-auto max-w-md rounded-2xl bg-black/55 p-1 backdrop-blur">
-            <div role="radiogroup" aria-label="Vista da câmera" className="flex">
+          <div className="absolute inset-x-0 bottom-0 p-2">
+            <div className="mx-auto flex max-w-md rounded-2xl bg-black/55 p-1 backdrop-blur" role="radiogroup" aria-label="Vista da câmera">
               {(Object.keys(NOMES_VISTAS) as VistaCamera[]).map((v) => (
                 <button
                   key={v}
@@ -426,108 +485,33 @@ function Palco({
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {erro && <Aviso tipo="erro">{mensagemDeErro(erro)}</Aviso>}
 
-      {/* ------------------------------------------------ momentos da dança */}
-      {formacoes.length === 0 ? (
-        <section className="rounded-2xl border border-dashed border-borda p-4 text-center">
-          <p className="font-medium">Nenhuma formação criada ainda</p>
-          <p className="mt-1 text-sm text-texto-suave">
-            {editor
-              ? 'Escolha um ponto de partida. Depois é só arrastar cada dançarino para o lugar certo.'
-              : 'Os professores ainda não montaram as formações desta dança. Por enquanto, veja a escalação.'}
-          </p>
-          {editor && (
-            <div className="mx-auto mt-3 flex max-w-sm flex-col gap-2 sm:flex-row">
-              <Selecao id="modelo-inicial" value={modelo} onChange={(e) => setModelo(e.target.value as ModeloFormacao)}>
-                {(Object.keys(NOMES_MODELOS) as ModeloFormacao[]).map((m) => (
-                  <option key={m} value={m}>
-                    {NOMES_MODELOS[m]}
-                  </option>
-                ))}
-              </Selecao>
-              <Botao className="shrink-0" disabled={criar.isPending} onClick={() => criarFormacao(true)}>
-                Criar primeira formação
-              </Botao>
-            </div>
-          )}
-        </section>
-      ) : (
-        <section className="rounded-2xl border border-borda bg-superficie p-3">
-          <div className="flex items-center gap-2">
-            <Botao
-              variante="secundario"
-              aria-label="Formação anterior"
-              className="shrink-0 px-3"
-              disabled={indice === 0 || tocando}
-              onClick={() => setIndice(indice - 1)}
-            >
-              <Icone nome="voltar" className="size-5" />
-            </Botao>
-            <ol className="flex flex-1 gap-2 overflow-x-auto py-1" aria-label="Momentos da dança">
-              {formacoes.map((f, i) => (
-                <li key={f.id}>
-                  <button
-                    type="button"
-                    disabled={tocando}
-                    onClick={() => setIndice(i)}
-                    aria-current={i === indice}
-                    className={`min-h-11 whitespace-nowrap rounded-xl border px-3 text-sm font-medium transition ${
-                      i === indice ? 'border-marca bg-marca text-marca-texto' : 'border-borda bg-superficie-2 hover:bg-borda/40'
-                    }`}
-                  >
-                    {i + 1}. {f.nome ?? `Momento ${i + 1}`}
-                  </button>
-                </li>
-              ))}
-              {editor && (
-                <li>
-                  <button
-                    type="button"
-                    disabled={criar.isPending || tocando}
-                    onClick={() => criarFormacao(false)}
-                    className="min-h-11 whitespace-nowrap rounded-xl border border-dashed border-borda px-3 text-sm font-medium text-link"
-                  >
-                    + Novo momento
-                  </button>
-                </li>
-              )}
-            </ol>
-            <Botao
-              variante="secundario"
-              aria-label="Próxima formação"
-              className="shrink-0 px-3"
-              disabled={indice >= formacoes.length - 1 || tocando}
-              onClick={() => setIndice(indice + 1)}
-            >
-              <Icone nome="voltar" className="size-5 rotate-180" />
-            </Botao>
-          </div>
-          <div className="mt-2 flex flex-wrap gap-2">
-            <Botao
-              className="text-sm"
-              disabled={formacoes.length < 2 || indice >= formacoes.length - 1}
-              onClick={() => (tocando ? (setTocando(false), setAnimadas(null)) : setTocando(true))}
-            >
-              {tocando ? '■ Parar' : '▶ Ver a transição até o fim'}
-            </Botao>
-            {editor && formacaoAtual && (
-              <Botao variante="secundario" className="text-sm" disabled={tocando} onClick={() => setEditandoFormacao(true)}>
-                Editar momento
-              </Botao>
-            )}
-          </div>
-          {formacaoAtual?.observacoes && (
-            <p className="mt-3 whitespace-pre-line rounded-xl bg-superficie-2 p-3 text-sm">{formacaoAtual.observacoes}</p>
-          )}
-          {editor && semPosicaoSalva > 0 && formacaoAtual && (
-            <p className="mt-2 text-xs text-texto-suave">
-              {semPosicaoSalva} dançarino(s) ainda sem posição salva neste momento — estão numa posição sugerida.
-            </p>
-          )}
-        </section>
+      {/* ------------------------------------------------ ações principais */}
+      <div className="flex flex-wrap gap-2">
+        <Botao variante="secundario" onClick={() => setModo(modo === 'mapa' ? '3d' : 'mapa')}>
+          {modo === 'mapa' ? 'Ver em 3D' : 'Voltar ao mapa'}
+        </Botao>
+        {formacoes.length > 1 && (
+          <Botao
+            variante="secundario"
+            disabled={indice >= formacoes.length - 1 && !tocando}
+            onClick={() => (tocando ? (setTocando(false), setAnimadas(null)) : setTocando(true))}
+          >
+            {tocando ? '■ Parar' : '▶ Ver a movimentação'}
+          </Botao>
+        )}
+        {editor && historico.current.length > 0 && (
+          <Botao variante="secundario" disabled={salvar.isPending} onClick={desfazer}>
+            Desfazer
+          </Botao>
+        )}
+      </div>
+
+      {formacaoAtual?.observacoes && (
+        <p className="whitespace-pre-line rounded-xl bg-superficie-2 p-3 text-sm">{formacaoAtual.observacoes}</p>
       )}
 
       {/* ------------------------------------------------ dançarino selecionado */}
@@ -539,112 +523,94 @@ function Palco({
             {sel.integrante.id === meuId && <Etiqueta cor="marca">Você</Etiqueta>}
             {tipoNaDanca(sel.integrante) && <Etiqueta>{NOME_INDUMENTARIA[tipoNaDanca(sel.integrante)!]}</Etiqueta>}
           </div>
-          <dl className="mt-2 grid gap-2 text-sm sm:grid-cols-3">
-            <div>
-              <dt className="text-texto-suave">Placa</dt>
-              <dd className="text-lg font-semibold">{placaSel ? nomeDaPlaca(placaSel.coluna, placaSel.fileira) : 'fora do tablado'}</dd>
-            </div>
-            <div>
-              <dt className="text-texto-suave">Direção</dt>
-              <dd className="font-medium">{descreverDirecao(posSel.rotacao)}</dd>
-            </div>
-            <div>
-              <dt className="text-texto-suave">Dupla nesta dança</dt>
-              <dd className="font-medium">
-                {sel.dupla ? `Dupla ${sel.dupla.numero} com ${parceiro ? nomeCurto(parceiro.integrante) : '—'}` : 'sem dupla'}
-              </dd>
-            </div>
-          </dl>
+          <p className="mt-1 text-sm">
+            Placa <b className="text-base">{placaSel ? nomeDaPlaca(placaSel.coluna, placaSel.fileira) : 'fora do tablado'}</b> ·{' '}
+            {descreverDirecao(posSel.rotacao)}
+            {sel.dupla && parceiro && <> · dupla {sel.dupla.numero} com {nomeCurto(parceiro.integrante)}</>}
+          </p>
 
           {editor && formacaoAtual && !tocando && (
-            <div className="mt-3 flex flex-wrap gap-2">
-              <Botao variante="secundario" className="text-sm" onClick={() => girar(posSel.rotacao - 45)} aria-label="Girar 45° anti-horário">
-                ⟲ 45°
-              </Botao>
-              <Botao variante="secundario" className="text-sm" onClick={() => girar(posSel.rotacao + 45)} aria-label="Girar 45° horário">
-                ⟳ 45°
-              </Botao>
-              <Botao variante="secundario" className="text-sm" onClick={() => girar(0)}>
-                De frente
-              </Botao>
-              {parceiro && (
-                <Botao
-                  variante="secundario"
-                  className="text-sm"
-                  onClick={() => girar(rotacaoOlhandoPara(posSel, exibida(parceiro.integrante.id)))}
-                >
-                  Para o par
+            <div className="mt-3">
+              <p className="mb-1.5 text-sm text-texto-suave">Virado para</p>
+              <div className="flex flex-wrap gap-2">
+                {direcoes.map((d) => (
+                  <Botao
+                    key={d.texto}
+                    variante={normalizarAngulo(posSel.rotacao) === d.rotacao ? 'primario' : 'secundario'}
+                    className="text-sm"
+                    onClick={() => girar(d.rotacao)}
+                  >
+                    {d.texto}
+                  </Botao>
+                ))}
+                {parceiro && (
+                  <Botao variante="secundario" className="text-sm" onClick={() => girar(rotacaoOlhandoPara(posSel, exibida(parceiro.integrante.id)))}>
+                    O par
+                  </Botao>
+                )}
+                <Botao variante="secundario" className="text-sm" onClick={() => girar(rotacaoOlhandoPara(posSel, { x: 0, z: 0 }))}>
+                  O centro
                 </Botao>
-              )}
-              <Botao variante="secundario" className="text-sm" onClick={() => girar(rotacaoOlhandoPara(posSel, { x: 0, z: 0 }))}>
-                Para o centro
-              </Botao>
+              </div>
             </div>
           )}
         </section>
       )}
 
-      {!sel && (
-        <p className="text-sm text-texto-suave">
-          {editor ? 'Toque num dançarino para selecionar e arraste para mover.' : 'Toque num dançarino para ver a placa e a direção.'}
-        </p>
-      )}
-
-      {/* ------------------------------------------------ ferramentas dos professores */}
+      {/* ------------------------------------------------ opções menos usadas, recolhidas */}
       {editor && formacaoAtual && (
-        <section className="grid gap-3 rounded-2xl border border-borda bg-superficie p-4 sm:grid-cols-2">
-          <div className="flex flex-col gap-2">
-            <p className="text-sm font-semibold">Organizar este momento automaticamente</p>
-            <div className="flex gap-2">
-              <Selecao id="modelo" value={modelo} onChange={(e) => setModelo(e.target.value as ModeloFormacao)}>
-                {(Object.keys(NOMES_MODELOS) as ModeloFormacao[]).map((m) => (
-                  <option key={m} value={m}>
-                    {NOMES_MODELOS[m]}
+        <details className="rounded-2xl border border-borda bg-superficie">
+          <summary className="min-h-11 cursor-pointer px-4 py-3 text-sm font-medium">Mais opções</summary>
+          <div className="grid gap-4 border-t border-borda p-4 sm:grid-cols-2">
+            <div className="flex flex-col gap-2">
+              <p className="text-sm font-semibold">Arrumar todos de uma vez</p>
+              <div className="flex gap-2">
+                <Selecao id="modelo" value={modelo} onChange={(e) => setModelo(e.target.value as ModeloFormacao)}>
+                  {(Object.keys(NOMES_MODELOS) as ModeloFormacao[]).map((m) => (
+                    <option key={m} value={m}>
+                      {NOMES_MODELOS[m]}
+                    </option>
+                  ))}
+                </Selecao>
+                <Botao
+                  variante="secundario"
+                  className="shrink-0"
+                  disabled={tocando}
+                  onClick={() => {
+                    const sugestao = sugerirPosicoes(modelo, participantes, medidas)
+                    gravar(participantes.map((p) => ({ id: p.integrante.id, posicao: sugestao.get(p.integrante.id)! })))
+                  }}
+                >
+                  Aplicar
+                </Botao>
+              </div>
+            </div>
+            <div className="flex flex-col gap-2">
+              <p className="text-sm font-semibold">Pilcha no 3D</p>
+              <Selecao
+                id="indumentaria"
+                value={indumentaria.id}
+                disabled={definirIndumentaria.isPending}
+                onChange={(e) => definirIndumentaria.mutate(e.target.value)}
+              >
+                {INDUMENTARIAS.map((i) => (
+                  <option key={i.id} value={i.id}>
+                    {i.nome}
                   </option>
                 ))}
               </Selecao>
-              <Botao
-                variante="secundario"
-                className="shrink-0"
-                disabled={tocando}
-                onClick={() => {
-                  const sugestao = sugerirPosicoes(modelo, participantes, medidas)
-                  gravar(participantes.map((p) => ({ id: p.integrante.id, posicao: sugestao.get(p.integrante.id)! })))
-                }}
-              >
-                Aplicar
+            </div>
+            <div className="flex flex-wrap items-center gap-2 sm:col-span-2">
+              <Botao variante="secundario" className="text-sm" disabled={tocando} onClick={() => setEditandoFormacao(true)}>
+                Renomear, mover ou excluir este momento
               </Botao>
+              <label className="flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border border-borda px-3 text-sm">
+                <input type="checkbox" checked={encaixe} onChange={(e) => setEncaixe(e.target.checked)} className="size-4 accent-[var(--marca)]" />
+                Encaixar na grade das placas
+              </label>
             </div>
           </div>
-          <div className="flex flex-col gap-2">
-            <p className="text-sm font-semibold">Indumentária desta dança</p>
-            <Selecao
-              id="indumentaria"
-              value={indumentaria.id}
-              disabled={definirIndumentaria.isPending}
-              onChange={(e) => definirIndumentaria.mutate(e.target.value)}
-            >
-              {INDUMENTARIAS.map((i) => (
-                <option key={i.id} value={i.id}>
-                  {i.nome}
-                </option>
-              ))}
-            </Selecao>
-          </div>
-          <div className="flex flex-wrap items-center gap-2 sm:col-span-2">
-            <label className="flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border border-borda px-3 text-sm">
-              <input type="checkbox" checked={encaixe} onChange={(e) => setEncaixe(e.target.checked)} className="size-4 accent-[var(--marca)]" />
-              Encaixar na grade das placas
-            </label>
-            <Botao variante="secundario" className="text-sm" disabled={!historico.current.length || salvar.isPending} onClick={desfazer}>
-              Desfazer ({historico.current.length})
-            </Botao>
-          </div>
-        </section>
-      )}
-
-      {!editor && (
-        <p className="text-sm text-texto-suave">Indumentária: {indumentaria.nome}</p>
+        </details>
       )}
 
       {editandoFormacao && formacaoAtual && (

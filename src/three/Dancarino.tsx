@@ -4,7 +4,7 @@
 //
 // O boneco é montado olhando para +z (rotação 0 = de frente para os jurados).
 // Atenção: olhando para +z, a ESQUERDA do boneco é o lado +x.
-import { Html } from '@react-three/drei'
+import { HtmlNaCena } from './HtmlNaCena'
 import { useThree, type ThreeEvent } from '@react-three/fiber'
 import { memo, useRef } from 'react'
 import { DoubleSide, Plane, Vector3 } from 'three'
@@ -402,7 +402,7 @@ function DancarinoBase({
       </mesh>
 
       {mostrarNome && !apagado && (
-        <Html position={[0, altura + 0.22, 0]} center zIndexRange={[20, 10]} style={{ pointerEvents: 'none' }}>
+        <HtmlNaCena position={[0, altura + 0.22, 0]} center zIndexRange={[20, 10]} style={{ pointerEvents: 'none' }}>
           <span
             className={`flex items-center gap-1 whitespace-nowrap rounded-full py-0.5 pl-0.5 pr-1.5 text-[10px] font-semibold shadow ${
               estado === 'selecionado' ? 'bg-white text-black' : 'bg-black/70 text-white'
@@ -413,7 +413,7 @@ function DancarinoBase({
             </span>
             {nome}
           </span>
-        </Html>
+        </HtmlNaCena>
       )}
     </group>
   )
