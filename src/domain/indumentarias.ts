@@ -63,7 +63,7 @@ export const INDUMENTARIAS: Indumentaria[] = [
     id: 'kame-vermelho',
     nome: 'Kamé e Kairú (conforme fotos)',
     descricao:
-      'Peão Kamé conforme foto do grupo: lenço vermelho na cabeça, camisa crua, colete vermelho fechado, chiripá caramelo sobre ceroulas brancas, botas de garrão e pala marrom-escuro comprido com franja preta. Peão Kairú conforme foto: lenço branco, poncho cinza curto com franja, calça azul-clara e botas claras. Prendas ainda sem referência confirmada.',
+      'Peão Kamé conforme foto do grupo: lenço vermelho na cabeça, camisa crua, colete vermelho fechado, chiripá caramelo sobre ceroulas brancas, botas de garrão e pala marrom-escuro comprido com franja preta. Peão Kairú conforme foto: lenço branco, poncho cinza curto com franja, calça azul-clara e botas claras. Prenda Kamé: vestido ocre com corpete vermelho. Prenda Kairú: vestido azul com corpete lilás.',
     peao: {
       camisa: '#efe7d6',
       colete: '#c21f2b',
@@ -94,16 +94,28 @@ export const INDUMENTARIAS: Indumentaria[] = [
       pala: '#8d9195',
       franjaPala: '#5c6064',
     },
-    // PROVISÓRIO: aguardando fotos confirmadas das prendas (cores neutras, sem inventar detalhes)
+    // Prenda Kamé (foto): vestido ocre, corpete vermelho com galão branco em zigue-zague,
+    // punhos e babado da barra vermelhos.
     prenda: {
-      saia: '#e9e2d2',
-      babado: '#d8cfba',
-      corpete: '#e9e2d2',
-      detalheCorpete: '#d8cfba',
-      mangas: '#e9e2d2',
-      gola: '#d8cfba',
-      cabelo: '#4a2f1f',
-      flor: '#d8cfba',
+      saia: '#c17a2e',
+      babado: '#c4432f',
+      corpete: '#c4432f',
+      detalheCorpete: '#f2e8d2',
+      mangas: '#c17a2e',
+      gola: '#c4432f',
+      cabelo: '#6b4a2e',
+      flor: '#6b4a2e',
+    },
+    // Prenda Kairú (foto): vestido azul, corpete e babados lilases, galão branco em losangos.
+    prendaKairu: {
+      saia: '#3f6fc4',
+      babado: '#c9a3e0',
+      corpete: '#c9a3e0',
+      detalheCorpete: '#f4f2f8',
+      mangas: '#3f6fc4',
+      gola: '#c9a3e0',
+      cabelo: '#6b4a2e',
+      flor: '#6b4a2e',
     },
   },
   {
@@ -248,7 +260,7 @@ export const INDUMENTARIAS: Indumentaria[] = [
   },
 ]
 
-export const INDUMENTARIA_PADRAO = 'azul-2026'
+export const INDUMENTARIA_PADRAO = 'kame-vermelho'
 
 export function buscarIndumentaria(id: string | null | undefined): Indumentaria {
   return INDUMENTARIAS.find((i) => i.id === id) ?? INDUMENTARIAS.find((i) => i.id === INDUMENTARIA_PADRAO)!

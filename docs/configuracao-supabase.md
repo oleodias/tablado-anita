@@ -20,7 +20,7 @@ aplicados na ordem do nome, **cada um uma única vez**:
 | `20261110000001_estrutura_inicial.sql` | 0 | sim |
 | `20261111000001_fase2_pares_escalacao.sql` | 2 | sim |
 | `20261112000001_fase1_tablado_estimado.sql` | 1 | sim |
-| `20261113000001_fase3_formacoes.sql` | 3 | aplicar antes de publicar a fase 3 |
+| `20261113000001_fase3_formacoes.sql` | 3 | sim |
 
 ## 2. Configurar os endereços de login
 
